@@ -1,0 +1,54 @@
+{
+ "actions": [],
+ "creation": "2026-09-09 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "question",
+  "question_type",
+  "options",
+  "is_mandatory"
+ ],
+ "fields": [
+  {
+   "fieldname": "question",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Question",
+   "reqd": 1
+  },
+  {
+   "fieldname": "question_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Answer Type",
+   "options": "Short Answer\nLong Answer\nSingle Choice\nMultiple Choice\nRating (1-5)\nYes/No",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:[\"Single Choice\",\"Multiple Choice\"].includes(doc.question_type)",
+   "fieldname": "options",
+   "fieldtype": "Small Text",
+   "label": "Options (one per line)"
+  },
+  {
+   "default": "1",
+   "fieldname": "is_mandatory",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Mandatory"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-09 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "HR Automation",
+ "name": "Training Assessment Question",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

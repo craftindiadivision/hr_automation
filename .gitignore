@@ -47,6 +47,7 @@ jspm_packages/
 *.comp.js
 .wnf-lang-status
 *debug.log
+cloudflared.log
 
 # Helix Editor
 .helix/

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Onboarding Details</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<style>
+		body { font-family: sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; color: #1a1a1a; }
+		fieldset { border: none; border-top: 1px solid #eee; padding: 16px 0; margin: 0 0 8px; }
+		legend { font-weight: 600; padding: 0; margin-bottom: 8px; }
+		label { display: block; font-size: 13px; color: #555; margin: 10px 0 4px; }
+		input, select, textarea { width: 100%; padding: 8px; box-sizing: border-box; font-size: 14px; }
+		textarea { resize: vertical; }
+		.row { display: flex; gap: 12px; }
+		.row > div { flex: 1; }
+	</style>
+</head>
+<body>
+{% if not valid %}
+	<h3>Invalid or expired link</h3>
+	<p>Please contact HR for a new link.</p>
+{% elif submitted %}
+	<h3>Onboarding Details Already Submitted</h3>
+	<p>Thank you, {{ employee_name }} — your onboarding details have already been recorded.</p>
+{% else %}
+	<h3>Onboarding Details</h3>
+	<p>{{ employee_name }}, please fill in your details below.</p>
+	<form id="onboarding-form">
+		<fieldset>
+			<legend>Personal</legend>
+			<label>Date of Birth</label>
+			<input type="date" name="date_of_birth" value="{{ values.date_of_birth or '' }}">
+			<label>Personal Email</label>
+			<input type="email" name="personal_email" value="{{ values.personal_email or '' }}">
+			<label>Contact Number</label>
+			<input type="text" name="cell_number" value="{{ values.cell_number or '' }}">
+			<div class="row">
+				<div>
+					<label>Marital Status</label>
+					<select name="marital_status">
+						<option value="">Select</option>
+						{% for opt in ["Single", "Married", "Divorced", "Widowed"] %}
+						<option value="{{ opt }}" {% if values.marital_status == opt %}selected{% endif %}>{{ opt }}</option>
+						{% endfor %}
+					</select>
+				</div>
+				<div>
+					<label>Blood Group</label>
+					<select name="blood_group">
+						<option value="">Select</option>
+						{% for opt in ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] %}
+						<option value="{{ opt }}" {% if values.blood_group == opt %}selected{% endif %}>{{ opt }}</option>
+						{% endfor %}
+					</select>
+				</div>
+			</div>
+		</fieldset>
+
+		<fieldset>
+			<legend>Address</legend>
+			<label>Current Address</label>
+			<textarea name="current_address" rows="2">{{ values.current_address or '' }}</textarea>
+			<label>Permanent Address</label>
+			<textarea name="permanent_address" rows="2">{{ values.permanent_address or '' }}</textarea>
+		</fieldset>
+
+		<fieldset>
+			<legend>Identification</legend>
+			<div class="row">
+				<div>
+					<label>Aadhaar Number</label>
+					<input type="text" name="custom_aadhaar_number" value="{{ values.custom_aadhaar_number or '' }}">
+				</div>
+				<div>
+					<label>PAN</label>
+					<input type="text" name="pan_number" value="{{ values.pan_number or '' }}">
+				</div>
+			</div>
+		</fieldset>
+
+		<fieldset>
+			<legend>Family Background</legend>
+			<label>Father's Name</label>
+			<input type="text" name="father_name">
+			<label>Mother's Name</label>
+			<input type="text" name="mother_name">
+			<label>Mother's Occupation</label>
+			<input type="text" name="mother_occupation">
+			<label>Spouse Name (if married)</label>
+			<input type="text" name="spouse_name">
+		</fieldset>
+
+		<fieldset>
+			<legend>Emergency Contact</legend>
+			<label>Emergency Contact Name</label>
+			<input type="text" name="person_to_be_contacted" value="{{ values.person_to_be_contacted or '' }}">
+			<div class="row">
+				<div>
+					<label>Emergency Phone</label>
+					<input type="text" name="emergency_phone_number" value="{{ values.emergency_phone_number or '' }}">
+				</div>
+				<div>
+					<label>Relation</label>
+					<input type="text" name="relation" value="{{ values.relation or '' }}">
+				</div>
+			</div>
+		</fieldset>
+
+		<fieldset>
+			<legend>Health</legend>
+			<label>Health Details</label>
+			<textarea name="health_details" rows="2">{{ values.health_details or '' }}</textarea>
+			<div class="row">
+				<div>
+					<label>Health Insurance Provider</label>
+					<input type="text" name="health_insurance_provider" value="{{ values.health_insurance_provider or '' }}">
+				</div>
+				<div>
+					<label>Health Insurance No</label>
+					<input type="text" name="health_insurance_no" value="{{ values.health_insurance_no or '' }}">
+				</div>
+			</div>
+		</fieldset>
+
+		<fieldset>
+			<legend>Provident Fund</legend>
+			<label>Provident Fund Account</label>
+			<input type="text" name="provident_fund_account" value="{{ values.provident_fund_account or '' }}">
+		</fieldset>
+
+		<fieldset>
+			<legend>Passport Details</legend>
+			<label>Passport Number</label>
+			<input type="text" name="passport_number" value="{{ values.passport_number or '' }}">
+			<div class="row">
+				<div>
+					<label>Date of Issue</label>
+					<input type="date" name="date_of_issue" value="{{ values.date_of_issue or '' }}">
+				</div>
+				<div>
+					<label>Valid Up To</label>
+					<input type="date" name="valid_upto" value="{{ values.valid_upto or '' }}">
+				</div>
+			</div>
+			<label>Place of Issue</label>
+			<input type="text" name="place_of_issue" value="{{ values.place_of_issue or '' }}">
+		</fieldset>
+
+		<button type="submit" style="margin-top:16px;padding:10px 24px;background:#2e7d32;color:#fff;
+			border:none;border-radius:4px;cursor:pointer;font-size:14px;">Submit</button>
+	</form>
+	<p id="status" style="margin-top:16px;"></p>
+	<script>
+		document.getElementById("onboarding-form").addEventListener("submit", function (e) {
+			e.preventDefault();
+			var statusEl = document.getElementById("status");
+			var formData = new FormData(e.target);
+			var payload = { token: "{{ token }}" };
+			formData.forEach(function (value, key) {
+				payload[key] = value;
+			});
+
+			statusEl.innerText = "Submitting...";
+			fetch("/api/method/hr_automation.api.onboarding_details.submit_onboarding_details", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			})
+				.then(function (r) {
+					if (!r.ok) throw new Error("submit failed");
+					return r.json();
+				})
+				.then(function () {
+					statusEl.innerText = "Thank you! Your onboarding details have been submitted.";
+					document.getElementById("onboarding-form").style.display = "none";
+				})
+				.catch(function () {
+					statusEl.innerText = "Submission failed. Please try again.";
+				});
+		});
+	</script>
+{% endif %}
+</body>
+</html>

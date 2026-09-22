@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Upload Documents</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<style>
+		body { font-family: sans-serif; max-width: 480px; margin: 60px auto; padding: 0 16px; color: #1a1a1a; }
+		.doc-row { margin-bottom: 14px; }
+		.doc-row label { display: block; font-size: 13px; color: #333; margin-bottom: 4px; }
+		.doc-row .optional { color: #888; font-weight: normal; }
+	</style>
+</head>
+<body>
+{% if valid %}
+	<h3>Upload Your Documents</h3>
+	<p>Reference: {{ target_name }}</p>
+	<form id="upload-form">
+		<div class="doc-row">
+			<label>10th Certificate</label>
+			<input type="file" data-label="10th Certificate">
+		</div>
+		<div class="doc-row">
+			<label>+2 Certificate</label>
+			<input type="file" data-label="+2 Certificate">
+		</div>
+		<div class="doc-row">
+			<label>Degree Certificate 1 <span class="optional">(if any)</span></label>
+			<input type="file" data-label="Degree Certificate 1">
+		</div>
+		<div class="doc-row">
+			<label>Degree Certificate 2 <span class="optional">(if any)</span></label>
+			<input type="file" data-label="Degree Certificate 2">
+		</div>
+		<div class="doc-row">
+			<label>Aadhaar Card</label>
+			<input type="file" data-label="Aadhaar Card">
+		</div>
+		<div class="doc-row">
+			<label>PAN Card</label>
+			<input type="file" data-label="PAN Card">
+		</div>
+		<div class="doc-row">
+			<label>Experience Letter <span class="optional">(if worked earlier)</span></label>
+			<input type="file" data-label="Experience Letter">
+		</div>
+		<div class="doc-row">
+			<label>Reference Letter <span class="optional">(if any)</span></label>
+			<input type="file" data-label="Reference Letter">
+		</div>
+		<button type="submit" style="padding:8px 20px;background:#2e7d32;color:#fff;border:none;
+			border-radius:4px;cursor:pointer;">Upload</button>
+	</form>
+	<p id="status" style="margin-top:16px;"></p>
+	<script>
+		document.getElementById("upload-form").addEventListener("submit", function (e) {
+			e.preventDefault();
+			var inputs = document.querySelectorAll('input[type="file"]');
+			var statusEl = document.getElementById("status");
+			var selected = [];
+			inputs.forEach(function (input) {
+				if (input.files.length) {
+					selected.push({ file: input.files[0], label: input.getAttribute("data-label") });
+				}
+			});
+			if (!selected.length) {
+				statusEl.innerText = "Please choose at least one document.";
+				return;
+			}
+			statusEl.innerText = "Uploading...";
+			var uploads = selected.map(function (item) {
+				var fd = new FormData();
+				fd.append("file", item.file);
+				fd.append("token", "{{ token }}");
+				fd.append("label", item.label);
+				return fetch("/api/method/hr_automation.api.recruitment_automation.upload_document_via_token", {
+					method: "POST",
+					body: fd,
+				}).then(function (r) {
+					if (!r.ok) throw new Error("upload failed");
+					return r.json();
+				});
+			});
+			Promise.all(uploads)
+				.then(function () {
+					statusEl.innerText = "Upload complete. Thank you!";
+					document.getElementById("upload-form").reset();
+				})
+				.catch(function () {
+					statusEl.innerText = "Upload failed. Please try again.";
+				});
+		});
+	</script>
+{% else %}
+	<h3>Invalid or expired link</h3>
+	<p>Please contact HR for a new link.</p>
+{% endif %}
+</body>
+</html>

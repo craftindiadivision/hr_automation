@@ -1,0 +1,97 @@
+{
+ "actions": [],
+ "creation": "2026-09-07 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "employee_name",
+  "email",
+  "column_break_1",
+  "notified",
+  "notified_on",
+  "responded",
+  "responded_on",
+  "token"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Email",
+   "options": "Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "notified",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Invite Sent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "notified_on",
+   "fieldtype": "Datetime",
+   "label": "Invite Sent On",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Marks that this invite link has been used - never linked back to the response itself, which stays fully anonymous.",
+   "fieldname": "responded",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Responded",
+   "read_only": 1
+  },
+  {
+   "fieldname": "responded_on",
+   "fieldtype": "Datetime",
+   "label": "Responded On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "token",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Token",
+   "no_copy": 1,
+   "read_only": 1,
+   "unique": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-07 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "HR Automation",
+ "name": "Employee Survey Recipient",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

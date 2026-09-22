@@ -5,6 +5,57 @@ app_description = "HR Automation"
 app_email = "kadeeja.craftinteractive@gmail.com"
 app_license = "mit"
 
+fixtures = [
+	{
+		"doctype": "Custom Field",
+		"filters": [
+			["dt", "in", ["Appointment Letter", "Job Applicant", "Job Offer", "Employee Separation", "Employee", "Appraisal Cycle", "Appraisal", "Training Event", "Training Program", "Training Feedback", "Training Event Employee"]]
+		],
+	},
+	{
+		"doctype": "Print Format",
+		"filters": [
+			[
+				"name",
+				"in",
+				[
+					"Appointment Letter Intern to Employee Under Probation",
+					"Appointment Letter",
+					"Confirmation as Employee",
+					"Employee Offer Letter",
+					"Intern Offer Letter",
+					"Full and Final Settlement Letter",
+					"Experience Letter",
+					"Increment Letter",
+					"Relieving Letter",
+					"Training Program Certificate",
+					"Training Program Group Certificate",
+				],
+			]
+		],
+	},
+	{
+		"doctype": "Appointment Letter Template",
+		"filters": [["name", "in", ["Intern to Employee under Probation", "Direct Appointment"]]],
+	},
+	{
+		"doctype": "Property Setter",
+		"filters": [
+			[
+				"name",
+				"in",
+				[
+					"Training Feedback-feedback-reqd",
+					"Training Feedback-feedback-label",
+					"Training Program-is_tree",
+					"Training Program-nsm_parent_field",
+				],
+			]
+		],
+	},
+	"Confidentiality and Non-Disclosure Agreement",
+]
+
 # Apps
 # ------------------
 
@@ -42,8 +93,23 @@ app_license = "mit"
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
+# Boot Session
+# ------------
+boot_session = "hr_automation.boot.boot_session"
+
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {
+	"HR Policy": "public/js/hr_policy.js",
+	"Appointment Letter": ["public/js/salary_breakup.js", "public/js/appointment_letter.js"],
+	"Job Offer": ["public/js/salary_breakup.js", "public/js/job_offer.js"],
+	"Confidentiality and Non-Disclosure Agreement": "public/js/nda.js",
+	"Employee": "public/js/employee.js",
+	"Employee Survey": "public/js/employee_survey.js",
+	"Training Feedback": "public/js/training_feedback.js",
+	"Training Event": "public/js/training_event.js",
+	"Training Program": "public/js/training_program.js",
+	"Knowledge Hub": "public/js/knowledge_hub.js",
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -134,38 +200,75 @@ app_license = "mit"
 # 	"Event": "frappe.desk.doctype.event.event.has_permission",
 # }
 
+permission_query_conditions = {
+	"Knowledge Hub": "hr_automation.api.knowledge_hub.get_permission_query_conditions",
+}
+
+has_permission = {
+	"Knowledge Hub": "hr_automation.api.knowledge_hub.has_permission",
+}
+
+override_doctype_class = {
+	"Training Program": "hr_automation.overrides.training_program.CustomTrainingProgram",
+}
+
 # Document Events
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Employee Separation": {
+		"validate": "hr_automation.api.employee_separation.sync_relieving_date_to_employee",
+	},
+	"Job Offer": {
+		"on_update": "hr_automation.api.recruitment_automation.on_job_offer_status_change",
+	},
+	"Employee": {
+		"after_insert": [
+			"hr_automation.api.employee_onboarding.create_onboarding_program",
+			"hr_automation.api.hr_policy.add_employee_to_all_policies",
+		],
+		"on_update": "hr_automation.api.employee_onboarding.create_onboarding_program",
+	},
+	"Training Event": {
+		"on_submit": [
+			"hr_automation.api.training_calendar.sync_training_event_to_calendar",
+			"hr_automation.api.training_completion.on_training_event_change",
+		],
+		"on_update_after_submit": [
+			"hr_automation.api.training_calendar.sync_training_event_to_calendar",
+			"hr_automation.api.training_completion.on_training_event_change",
+		],
+		"on_cancel": [
+			"hr_automation.api.training_calendar.remove_training_event_from_calendar",
+			"hr_automation.api.training_completion.on_training_event_change",
+		],
+	},
+	"Employee Survey Response": {
+		"before_insert": "hr_automation.api.employee_survey.anonymize_survey_response",
+		"after_insert": "hr_automation.api.employee_survey.remove_survey_response_tracking",
+	},
+	"Employee Survey": {
+		"on_update": "hr_automation.api.employee_survey.notify_survey_recipients",
+	},
+	"Training Feedback": {
+		"on_submit": "hr_automation.api.training_completion.on_training_feedback_change",
+		"on_cancel": "hr_automation.api.training_completion.on_training_feedback_change",
+	},
+	"Knowledge Hub": {
+		"on_update": "hr_automation.api.knowledge_hub.queue_conversion",
+	},
+}
 
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"hr_automation.tasks.all"
-# 	],
-# 	"daily": [
-# 		"hr_automation.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"hr_automation.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"hr_automation.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"hr_automation.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	"daily": [
+		"hr_automation.api.employee_assessments.send_assessment_notifications",
+		"hr_automation.api.training_calendar.send_event_reminders",
+	],
+}
 
 # Testing
 # -------

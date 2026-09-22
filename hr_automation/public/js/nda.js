@@ -1,0 +1,55 @@
+const DEFAULT_NDA_CLAUSES = [
+	{
+		"title": "Confidential Information",
+		"description": "The Parties agree that information disclosed orally or in writing or made available by the Company (&ldquo;Company&rdquo;) to another Party (&ldquo;Employee&rdquo;), including, but not limited to, information acquired from employees; trade secrets; strategic plans; customer information; computer applications; databases; suppliers; software; dealer channels; marketing studies; intellectual property; information relating to process and products, designs, business plans, business opportunities, marketing plans, finances, know-how or personnel; confidential information originally received from third parties; information relating to any type of technology, and all other material whether written or oral, tangible or intangible, shall be deemed &ldquo;Confidential Information&rdquo;. In addition, the existence and terms of this Agreement shall also be treated as Confidential Information. The parties agree that any Confidential Information disclosed prior to the execution of this Agreement during the course of employment was intended to be and shall be subject to the terms and conditions of this Agreement."
+	},
+	{
+		"title": "Restrictions and Exceptions",
+		"description": "The Employee agrees to maintain the confidentiality of the Confidential Information and to prevent its unauthorized dissemination or of any information/disclosures made by the company any time."
+	},
+	{
+		"title": "Non-Disclosure",
+		"description": "The Employee expressly agrees that he/she shall not use Confidential Information provided by the Company in the development or delivery or for personal gain from providing of any products or services for his/her own account or for the account of any third party. The Employee shall protect the Confidential Information by using the same degree of care, but no less than reasonable care, to prevent the unauthorized use, dissemination or publication of the Confidential Information as the Employee uses to protect its own Confidential Information. The Employee shall limit its internal disclosure of the Confidential Information to only those employees and agents who have a need to know the information for the limited purpose of executing his/her job responsibility."
+	},
+	{
+		"title": "Ownership of Confidential Information",
+		"description": "All Confidential Information, and all material items delivered by the Company to the Employee, remains the property of the Company and no license or other rights in the Confidential Information are granted to the Employee by this Agreement or by the act of disclosure."
+	},
+	{
+		"title": "Return of materials and documents",
+		"description": "Upon the written request of the Company, the Employee shall return to it (or, at the request of the Company, erase or destroy) all materials that contain or embody any Confidential Information of the Company, including but not limited to all computer application, documentation, financial statement, forms, notes, manuals, Standard Operating Procedures, customer information and copies thereof. Return or destruction of such material shall not relieve the Employee of its obligations of confidentiality. Upon the request of the Company, the Employee will certify that it has complied with the provisions of this paragraph."
+	},
+	{
+		"title": "Non-Circumvention",
+		"description": "The Employee agree to not circumvent the Company and work with business associates, clients, and other third party vendors introduced by the Company. This non-circumvention provision shall expire at the end of one (1) year from the termination of this Agreement."
+	},
+	{
+		"title": "Non-Solicitation",
+		"description": "For a period of one (1) year after the termination of this Agreement, the Employee agrees that he/she will not solicit for work, or provide service or advice or assist others with the opportunity to do the same, any Client of any the Company."
+	},
+	{
+		"title": "No Tampering",
+		"description": "While Employee is employed by the Company and for two year following the termination of Employee's employment with the Company, the Employee shall not (a) request, induce or attempt to influence any supplier of goods or services to the Company to curtail or cancel any business they may transact with the Company; (b) request, induce or attempt to influence any customers of the Company that have done business with or potential customers which have been in contact with the Company to curtail or cancel any business they may transact with the Company; or (c) request, induce or attempt to influence any employee of the Company to terminate his or her employment with the Company."
+	},
+	{
+		"title": "Remedy",
+		"description": "The Employee hereby acknowledge that unauthorized disclosure or use of Confidential Information or a breach of this Agreement is a fraud perpetrated on the Company, which could cause significant and irreparable financial harm. Accordingly, the Employee agree that the Company shall have the right to seek and obtain injunctive relief from breaches of this Agreement in addition to any monetary damages in excess of Rs. 5000/- per each instance of breach of agreement, other rights and remedies it may have from a court of competent jurisdiction."
+	},
+	{
+		"title": "Termination",
+		"description": "This Agreement shall survive and remain in effect and expressly terminated in writing and signed by all Parties, or until one (1) year from the date of termination of employment between the Company and the Employee."
+	},
+	{
+		"title": "General",
+		"description": "This Agreement contains the entire agreement between the parties, and supersedes any prior written or oral agreements between them concerning the subject matter contained herein. The provisions of this Agreement may be waived, altered, amended or repealed, in whole or in part, only upon the written consent of all parties. The waiver of any party of a breach or violation of any provision of this Agreement shall not operate as or be construed to be a waiver of any subsequent breach hereof. This Agreement constitutes the product of negotiations of the parties here to and any enforcement hereof will be interpreted in a neutral manner and not more strongly for against any party based upon the source of the draftsmanship of this Agreement. If any provision of this Agreement shall be held invalid or unenforceable by a court of competent jurisdiction, the remaining provisions hereof shall continue to be fully effective."
+	}
+];
+
+frappe.ui.form.on("Confidentiality and Non-Disclosure Agreement", {
+	onload: function (frm) {
+		if (!frm.doc.clauses.length) {
+			DEFAULT_NDA_CLAUSES.forEach((clause) => frm.add_child("clauses", clause));
+		}
+		frm.refresh_field("clauses");
+	},
+});

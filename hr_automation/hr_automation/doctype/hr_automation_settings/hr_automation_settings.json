@@ -1,0 +1,124 @@
+{
+ "actions": [],
+ "creation": "2026-09-05 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "assessment_notifications_section",
+  "assessment_notification_recipients",
+  "training_calendar_section",
+  "training_google_calendar",
+  "joining_pipeline_section",
+  "onboarding_event_names",
+  "column_break_pipeline",
+  "buddy_training_event_names",
+  "certificates_section",
+  "director_name",
+  "column_break_director",
+  "director_signature"
+ ],
+ "fields": [
+  {
+   "fieldname": "assessment_notifications_section",
+   "fieldtype": "Section Break",
+   "label": "Assessment Notifications"
+  },
+  {
+   "fieldname": "assessment_notification_recipients",
+   "fieldtype": "Table",
+   "label": "Also Notify (CC)",
+   "options": "HR Automation Notification Recipient"
+  },
+  {
+   "fieldname": "training_calendar_section",
+   "fieldtype": "Section Break",
+   "label": "Training Calendar"
+  },
+  {
+   "description": "Submitted Training Events are synced as invites into this Google Calendar. The calendar must already be connected and authorized under Google Calendar. Reminder-email timing (e.g. 1 day before) is controlled by that Google account's own calendar notification settings.",
+   "fieldname": "training_google_calendar",
+   "fieldtype": "Link",
+   "label": "Google Calendar",
+   "options": "Google Calendar"
+  },
+  {
+   "fieldname": "joining_pipeline_section",
+   "fieldtype": "Section Break",
+   "label": "Joining Pipeline"
+  },
+  {
+   "description": "One row per event, in order - e.g. \"Company Introduction\", \"Policy Briefing\", \"Meet the Team\". The number of rows is the number of events created. Nothing is created for a new joiner until at least one row is added here.",
+   "fieldname": "onboarding_event_names",
+   "fieldtype": "Table",
+   "label": "Onboarding Event Names",
+   "options": "HR Automation Pipeline Event"
+  },
+  {
+   "fieldname": "column_break_pipeline",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "One row per event, in order. The number of rows is the number of events created. Nothing is created once Onboarding completes until at least one row is added here.",
+   "fieldname": "buddy_training_event_names",
+   "fieldtype": "Table",
+   "label": "Buddy Training Event Names",
+   "options": "HR Automation Pipeline Event"
+  },
+  {
+   "fieldname": "certificates_section",
+   "fieldtype": "Section Break",
+   "label": "Certificates"
+  },
+  {
+   "description": "Shown as the second signatory (alongside the program's own Trainer) on every Training Program and Training Program Group certificate.",
+   "fieldname": "director_name",
+   "fieldtype": "Data",
+   "label": "Director Name"
+  },
+  {
+   "fieldname": "column_break_director",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "director_signature",
+   "fieldtype": "Signature",
+   "label": "Director Signature"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-09-05 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "HR Automation",
+ "name": "HR Automation Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "HR User",
+   "share": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

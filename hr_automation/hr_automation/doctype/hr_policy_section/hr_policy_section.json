@@ -1,0 +1,39 @@
+{
+ "actions": [],
+ "creation": "2026-09-17 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "heading",
+  "explanation"
+ ],
+ "fields": [
+  {
+   "columns": 3,
+   "fieldname": "heading",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Section Title",
+   "reqd": 1
+  },
+  {
+   "columns": 9,
+   "fieldname": "explanation",
+   "fieldtype": "Text Editor",
+   "in_list_view": 1,
+   "label": "Details",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2026-09-17 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "HR Automation",
+ "name": "HR Policy Section",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

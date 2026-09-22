@@ -1,0 +1,104 @@
+{
+ "actions": [],
+ "autoname": "field:policy_title",
+ "creation": "2026-09-17 00:00:00",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "policy_title",
+  "effective_date",
+  "section_break_mxep",
+  "sections",
+  "acknowledgement_tab",
+  "employee_acknowledgements"
+ ],
+ "fields": [
+  {
+   "fieldname": "policy_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Policy Title",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "effective_date",
+   "fieldtype": "Date",
+   "label": "Effective Date"
+  },
+  {
+   "fieldname": "sections",
+   "fieldtype": "Table",
+   "label": "Policy Sections",
+   "options": "HR Policy Section",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_mxep",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "acknowledgement_tab",
+   "fieldtype": "Tab Break",
+   "label": "Acknowledgement"
+  },
+  {
+   "fieldname": "employee_acknowledgements",
+   "fieldtype": "Table",
+   "label": "Employee Acknowledgement",
+   "options": "HR Policy Acknowledgement"
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-17 16:39:15.472037",
+ "modified_by": "Administrator",
+ "module": "HR Automation",
+ "name": "HR Policy",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Employee"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
