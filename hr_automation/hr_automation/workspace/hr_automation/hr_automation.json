@@ -1,0 +1,208 @@
+{
+ "app": "hr_automation",
+ "charts": [],
+ "content": "[{\"id\": \"ccbe6c05fc\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Hiring and Joining</b></span>\", \"col\": 12}}, {\"id\": \"47f9fa7c77\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Interview Questions\", \"col\": 3}}, {\"id\": \"9aacfd35e8\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Pre-Appraisal Feedback\", \"col\": 3}}, {\"id\": \"0c77bf09ec\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"f9eeee4055\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Training</b></span>\", \"col\": 12}}, {\"id\": \"fe8ea649cf\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Training Program\", \"col\": 3}}, {\"id\": \"9dba7da9a9\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Training Feedback Form\", \"col\": 3}}, {\"id\": \"8e0be06589\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Training Assessment Form\", \"col\": 3}}, {\"id\": \"0329bda9db\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Training Assessment\", \"col\": 3}}, {\"id\": \"fe09631e9b\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Program Completion\", \"col\": 3}}, {\"id\": \"1c2a2197ed\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Group Completion\", \"col\": 3}}, {\"id\": \"d668502138\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Training & Survey Dashboard\", \"col\": 3}}, {\"id\": \"71fedc8661\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Program Group Progress\", \"col\": 3}}, {\"id\": \"377687bb22\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"6d8a17e8bf\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Knowledge and Policies</b></span>\", \"col\": 12}}, {\"id\": \"7ce261f1c3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Knowledge Hub\", \"col\": 3}}, {\"id\": \"c3326fa150\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Knowledge Hub Library\", \"col\": 3}}, {\"id\": \"54a7baa471\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"HR Policy\", \"col\": 3}}, {\"id\": \"ac6a864aed\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"HR Policies\", \"col\": 3}}, {\"id\": \"d577aaa256\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Non-Disclosure Agreement\", \"col\": 3}}, {\"id\": \"08cdca474a\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"10e9790346\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Surveys and Grievances</b></span>\", \"col\": 12}}, {\"id\": \"9470736065\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Employee Survey\", \"col\": 3}}, {\"id\": \"fe1edf8a1d\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Survey Responses\", \"col\": 3}}, {\"id\": \"db447f4357\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Employee Grievance\", \"col\": 3}}, {\"id\": \"9e964f1e0c\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Grievance Type\", \"col\": 3}}, {\"id\": \"2cf5d27584\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"fd211e8219\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Records, Reports and Settings</b></span>\", \"col\": 12}}, {\"id\": \"9f70de5123\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Employee Documents\", \"col\": 3}}, {\"id\": \"ca1294910f\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Payroll Reconciliation\", \"col\": 3}}, {\"id\": \"20e3c26e09\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"HR Automation Settings\", \"col\": 3}}, {\"id\": \"79ed896176\", \"type\": \"spacer\", \"data\": {\"col\": 12}}]",
+ "creation": "2026-10-29 19:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "briefcase",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "HR Automation",
+ "links": [],
+ "modified": "2026-10-29 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "HR Automation",
+ "name": "HR Automation",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 30.0,
+ "shortcuts": [
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "format": "",
+   "label": "Interview Questions",
+   "link_to": "Interview Questions",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "format": "",
+   "label": "Pre-Appraisal Feedback",
+   "link_to": "Pre-Appraisal Feedback",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "format": "",
+   "label": "Training Program",
+   "link_to": "Training Program",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "format": "",
+   "label": "Training Feedback Form",
+   "link_to": "Training Feedback Form",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "format": "",
+   "label": "Training Assessment Form",
+   "link_to": "Training Assessment Form",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "format": "",
+   "label": "Training Assessment",
+   "link_to": "Training Assessment",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "format": "",
+   "label": "Program Completion",
+   "link_to": "Training Program Completion",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "format": "",
+   "label": "Group Completion",
+   "link_to": "Training Program Group Completion",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "",
+   "format": "",
+   "label": "Training & Survey Dashboard",
+   "link_to": "training-survey-dashboard",
+   "type": "Page"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "",
+   "format": "",
+   "label": "Program Group Progress",
+   "link_to": "training-program-group-progress",
+   "type": "Page"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "",
+   "format": "",
+   "label": "Knowledge Hub",
+   "link_to": "Knowledge Hub",
+   "type": "DocType"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "",
+   "format": "",
+   "label": "Knowledge Hub Library",
+   "link_to": "knowledge-hub-home",
+   "type": "Page"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "",
+   "format": "",
+   "label": "HR Policy",
+   "link_to": "HR Policy",
+   "type": "DocType"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "",
+   "format": "",
+   "label": "HR Policies",
+   "link_to": "hr-policies",
+   "type": "Page"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "",
+   "format": "",
+   "label": "Non-Disclosure Agreement",
+   "link_to": "Confidentiality and Non-Disclosure Agreement",
+   "type": "DocType"
+  },
+  {
+   "color": "Cyan",
+   "doc_view": "",
+   "format": "",
+   "label": "Employee Survey",
+   "link_to": "Employee Survey",
+   "type": "DocType"
+  },
+  {
+   "color": "Cyan",
+   "doc_view": "",
+   "format": "",
+   "label": "Survey Responses",
+   "link_to": "Employee Survey Response",
+   "type": "DocType"
+  },
+  {
+   "color": "Cyan",
+   "doc_view": "",
+   "format": "",
+   "label": "Employee Grievance",
+   "link_to": "Employee Grievance",
+   "type": "DocType"
+  },
+  {
+   "color": "Cyan",
+   "doc_view": "",
+   "format": "",
+   "label": "Grievance Type",
+   "link_to": "Grievance Type",
+   "type": "DocType"
+  },
+  {
+   "color": "Gray",
+   "doc_view": "",
+   "format": "",
+   "label": "Employee Documents",
+   "link_to": "employee-documents",
+   "type": "Page"
+  },
+  {
+   "color": "Gray",
+   "doc_view": "",
+   "format": "",
+   "label": "Payroll Reconciliation",
+   "link_to": "Payroll Reconciliation",
+   "type": "Report",
+   "report_ref_doctype": "Salary Slip"
+  },
+  {
+   "color": "Gray",
+   "doc_view": "",
+   "format": "",
+   "label": "HR Automation Settings",
+   "link_to": "HR Automation Settings",
+   "type": "DocType"
+  }
+ ],
+ "title": "HR Automation",
+ "type": "Workspace"
+}

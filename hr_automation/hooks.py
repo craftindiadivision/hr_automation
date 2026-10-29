@@ -141,6 +141,7 @@ doctype_js = {
 	"Training Program": "public/js/training_program.js",
 	"Knowledge Hub": "public/js/knowledge_hub.js",
 	"Job Applicant": "public/js/job_applicant.js",
+	"Job Opening": "public/js/job_opening.js",
 	"Leave Application": "public/js/leave_application.js",
 	"Interview": "public/js/interview.js",
 }
@@ -288,6 +289,7 @@ doc_events = {
 		"on_update": "hr_automation.api.recruitment_automation.on_appointment_letter_update",
 	},
 	"Job Applicant": {
+		"before_insert": "hr_automation.api.job_openings.set_applicant_source_from_link",
 		"on_update": "hr_automation.api.recruitment_automation.send_selection_email",
 	},
 	"Interview": {
@@ -419,7 +421,7 @@ override_doctype_dashboards = {
 
 # Request Events
 # ----------------
-# before_request = ["hr_automation.utils.before_request"]
+before_request = ["hr_automation.api.job_openings.remember_applicant_source"]
 # after_request = ["hr_automation.utils.after_request"]
 
 # Job Events

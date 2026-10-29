@@ -1,8 +1,11 @@
 import html
+import ipaddress
 import json
 import re
+from urllib.parse import urlparse
 
 import frappe
+from frappe import _
 from frappe.utils import get_url, pretty_date
 
 DEFAULT_APPLICATION_WEB_FORM_ROUTE = "job_application"
@@ -145,3 +148,68 @@ def render_widget_script(jobs):
 	}}
 }})();
 """
+
+
+LINKEDIN_SOURCE = "LinkedIn"
+SOURCE_PARAM = "source"
+SOURCE_COOKIE = "hr_applicant_source"
+SOURCE_COOKIE_DAYS = 7
+
+
+def _is_local_address(url: str) -> bool:
+	"""True for addresses only this computer or network can reach."""
+	host = urlparse(url).hostname or ""
+	try:
+		ip = ipaddress.ip_address(host)
+		return ip.is_loopback or ip.is_private
+	except ValueError:
+		return host == "localhost" or host.endswith((".local", ".localhost", ".test", ".craft"))
+
+
+@frappe.whitelist()
+def get_linkedin_message(job_opening: str) -> str:
+	"""The post to paste into LinkedIn: hiring headline, apply now, and the link
+	to this opening's public page. The link carries ?source=LinkedIn, so
+	applicants who arrive through it are recorded as coming from LinkedIn."""
+	frappe.has_permission("Job Opening", "read", job_opening, throw=True)
+	job = frappe.get_doc("Job Opening", job_opening)
+	if not job.publish or job.status != "Open" or not job.route:
+		frappe.throw(_("Publish the opening (and keep it Open) before posting it on LinkedIn"))
+
+	location = frappe.db.get_value("Branch", job.location, "branch") if job.location else None
+	details = " · ".join(x for x in (job.company, location, job.employment_type) if x)
+	link = get_url(f"/{job.route}?{SOURCE_PARAM}={LINKEDIN_SOURCE}")
+	if _is_local_address(link):
+		frappe.msgprint(
+			_(
+				"The link in this post starts with {0}, which only works on this computer, so people on "
+				"LinkedIn won't be able to open it. Set the site's public address first (host_name in the "
+				"site config), then copy the post again."
+			).format(frappe.bold(urlparse(link).netloc)),
+			title=_("Link won't open for others"),
+			indicator="orange",
+		)
+	return f"We're hiring: {job.job_title}\n{details}\nApply now: {link}"
+
+
+def remember_applicant_source():
+	"""before_request: someone opening a job page (or the application form) from
+	a tracked link (?source=LinkedIn) has that source remembered for a week, so
+	it is still known when they submit the application."""
+	source = frappe.form_dict.get(SOURCE_PARAM)
+	if not source or not frappe.request or not frappe.request.path.startswith(("/jobs/", "/job_application")):
+		return
+	if frappe.db.exists("Job Applicant Source", source):
+		frappe.local.cookie_manager.set_cookie(SOURCE_COOKIE, source, max_age=SOURCE_COOKIE_DAYS * 24 * 3600)
+
+
+def set_applicant_source_from_link(doc, method=None):
+	"""Job Applicant before_insert: an applicant who arrived through a tracked
+	link gets the remembered Source. Only an existing Job Applicant Source is
+	accepted, and a Source already set is never replaced."""
+	if doc.source:
+		return
+	request = getattr(frappe.local, "request", None)  # none in scripts, imports, background jobs
+	source = request.cookies.get(SOURCE_COOKIE) if request else None
+	if source and frappe.db.exists("Job Applicant Source", source):
+		doc.source = source
