@@ -5,6 +5,17 @@ import re
 import frappe
 from frappe.utils import get_url, pretty_date
 
+DEFAULT_APPLICATION_WEB_FORM_ROUTE = "job_application"
+
+
+def set_default_application_web_form_route(doc, method=None):
+	"""validate hook: a published Job Opening needs an Application Web Form
+	Route or its public page shows no Apply button at all - rather than rely on
+	HR remembering to set this by hand on every opening, default it to our
+	standard job application form the moment Publish is ticked."""
+	if doc.publish and not doc.job_application_route:
+		doc.job_application_route = DEFAULT_APPLICATION_WEB_FORM_ROUTE
+
 
 @frappe.whitelist(allow_guest=True)
 def published_jobs_js():

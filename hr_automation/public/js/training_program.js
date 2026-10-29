@@ -17,6 +17,11 @@ frappe.ui.form.on("Training Program", {
 			});
 		}
 
+		const is_completed =
+			frm.doc.custom_number_of_events > 0 &&
+			frm.doc.custom_completed_events >= frm.doc.custom_number_of_events;
+		if (is_completed) return;
+
 		frm.add_custom_button(__("Create Events"), () => {
 			frappe.call({
 				method: "hr_automation.api.training_completion.create_events_from_schedule",

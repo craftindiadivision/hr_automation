@@ -1,0 +1,11 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-10-15 12:11:53.216269",
+  "name": "Pending HR Approval",
+  "style": "Warning",
+  "workflow_state_name": "Pending HR Approval"
+ }
+]

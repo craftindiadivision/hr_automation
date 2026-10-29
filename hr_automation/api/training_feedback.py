@@ -1,6 +1,8 @@
 import frappe
 from frappe import _
-from frappe.utils import get_url, random_string
+from frappe.utils import get_url, now_datetime, random_string
+
+from hr_automation.api.link_expiry import check_email_matches, check_not_expired
 
 FEEDBACK_EMAIL_TEMPLATE = """
 <p>Hi {{ employee_name }},</p>
@@ -31,10 +33,10 @@ def get_feedback_questions(training_event: str):
 
 
 @frappe.whitelist()
-def send_feedback_requests(training_event: str, feedback_form: str, assessment_form: str = None):
+def send_feedback_requests(training_event: str, feedback_form: str, assessment_form: str = None, resend: bool = False):
 	"""Called from the Training Event's 'Send Feedback Form' dialog. Emails every
-	Present attendee (who hasn't already submitted feedback) a personal link to the
-	chosen feedback form. If an Assessment Form is also chosen, it's stored on the
+	Present attendee a personal link to the chosen feedback form. Each employee is
+	emailed once; resend=True re-emails only those who haven't responded yet. If an Assessment Form is also chosen, it's stored on the
 	event so an assessment gets emailed automatically the moment each employee
 	submits their feedback."""
 	frappe.only_for(ALLOWED_ROLES)
@@ -54,6 +56,8 @@ def send_feedback_requests(training_event: str, feedback_form: str, assessment_f
 	sent_count = 0
 	for row in event.employees:
 		if row.attendance != "Present" or row.status == "Feedback Submitted":
+			continue
+		if row.status == "Invited" and not resend:
 			continue
 
 		if not row.custom_feedback_token:
@@ -82,27 +86,42 @@ def send_feedback_requests(training_event: str, feedback_form: str, assessment_f
 			reference_doctype="Training Event",
 			reference_name=event.name,
 		)
-		frappe.db.set_value("Training Event Employee", row.name, "status", "Invited")
+		frappe.db.set_value(
+			"Training Event Employee",
+			row.name,
+			{"status": "Invited", "custom_feedback_token_sent_at": now_datetime()},
+			update_modified=False,
+		)
 		sent_count += 1
 
 	return {"sent_count": sent_count}
 
 
-def _resolve_feedback_token(token: str) -> dict:
+def _resolve_feedback_token(token: str, email: str) -> dict:
 	row = frappe.db.get_value(
 		"Training Event Employee",
 		{"custom_feedback_token": token},
-		["name", "parent", "employee", "employee_name", "status"],
+		["name", "parent", "employee", "employee_name", "status", "custom_feedback_token_sent_at"],
 		as_dict=True,
 	)
 	if not row:
 		frappe.throw(_("Invalid or expired link."), frappe.DoesNotExistError)
+
+	stored_email = (
+		frappe.db.get_value("Employee", row.employee, "user_id")
+		or frappe.db.get_value("Employee", row.employee, "company_email")
+		or frappe.db.get_value("Employee", row.employee, "personal_email")
+	)
+	check_email_matches(stored_email, email)
+
+	if row.status != "Feedback Submitted":
+		check_not_expired(row.custom_feedback_token_sent_at)
 	return row
 
 
 @frappe.whitelist(allow_guest=True)
-def get_feedback_by_token(token: str):
-	row = _resolve_feedback_token(token)
+def get_feedback_by_token(token: str, email: str):
+	row = _resolve_feedback_token(token, email)
 
 	if row.status == "Feedback Submitted":
 		return {"already_submitted": True}
@@ -128,11 +147,11 @@ def get_feedback_by_token(token: str):
 
 
 @frappe.whitelist(allow_guest=True)
-def submit_feedback_by_token(token: str, answers):
+def submit_feedback_by_token(token: str, email: str, answers):
 	if isinstance(answers, str):
 		answers = frappe.parse_json(answers)
 
-	row = _resolve_feedback_token(token)
+	row = _resolve_feedback_token(token, email)
 	if row.status == "Feedback Submitted":
 		frappe.throw(_("Feedback has already been submitted for this training."))
 

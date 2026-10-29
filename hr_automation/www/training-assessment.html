@@ -30,6 +30,7 @@
 (function () {
 	var token = {{ (token or "") | tojson }};
 	var app = document.getElementById("app");
+	var confirmedEmail = "";
 
 	if (!token) {
 		app.innerHTML = '<p class="notice">This link is missing its access token.</p>';
@@ -63,8 +64,34 @@
 		});
 	}
 
-	function load() {
-		call("hr_automation.api.training_assessment.get_assessment_by_token", { token: token })
+	function renderEmailGate() {
+		app.innerHTML =
+			'<p>Please confirm the email address this link was sent to:</p>' +
+			'<form id="email-gate-form">' +
+			'<input type="email" id="gate-email" required placeholder="you@example.com">' +
+			'<button type="submit" style="margin-top:16px;">Continue</button>' +
+			'<p id="gate-status" style="color:#c62828;"></p>' +
+			"</form>";
+		document.getElementById("email-gate-form").addEventListener("submit", function (e) {
+			e.preventDefault();
+			var email = document.getElementById("gate-email").value.trim();
+			var gateStatus = document.getElementById("gate-status");
+			gateStatus.innerText = "Checking...";
+			gateStatus.style.color = "#555";
+			call("hr_automation.api.training_assessment.get_assessment_by_token", { token: token, email: email })
+				.then(function (data) {
+					confirmedEmail = email;
+					load(data);
+				})
+				.catch(function (e) {
+					gateStatus.style.color = "#c62828";
+					gateStatus.innerText = e.message || "That didn't match. Please try again.";
+				});
+		});
+	}
+
+	function load(data) {
+		Promise.resolve(data)
 			.then(function (data) {
 				if (data.already_submitted) {
 					app.innerHTML = '<p class="notice">You have already submitted an assessment for this training. Thank you!</p>';
@@ -164,6 +191,7 @@
 
 			call("hr_automation.api.training_assessment.submit_assessment_by_token", {
 				token: token,
+				email: confirmedEmail,
 				answers: JSON.stringify(answers),
 			})
 				.then(function () {
@@ -176,7 +204,7 @@
 		});
 	}
 
-	load();
+	renderEmailGate();
 })();
 </script>
 </body>

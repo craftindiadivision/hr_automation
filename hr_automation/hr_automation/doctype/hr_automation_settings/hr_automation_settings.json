@@ -12,6 +12,13 @@
   "onboarding_event_names",
   "column_break_pipeline",
   "buddy_training_event_names",
+  "leave_section",
+  "backdated_leave_role",
+  "appraisals_section",
+  "training_appraisal_template",
+  "column_break_appraisals",
+  "probation_appraisal_template",
+  "annual_appraisal_template",
   "certificates_section",
   "director_name",
   "column_break_director",
@@ -65,6 +72,45 @@
    "options": "HR Automation Pipeline Event"
   },
   {
+   "fieldname": "leave_section",
+   "fieldtype": "Section Break",
+   "label": "Leave & Attendance"
+  },
+  {
+   "fieldname": "backdated_leave_role",
+   "fieldtype": "Link",
+   "label": "Role Allowed to Enter Past Dates (Leave / Attendance Request)",
+   "options": "Role"
+  },
+  {
+   "fieldname": "appraisals_section",
+   "fieldtype": "Section Break",
+   "label": "Appraisals",
+   "description": "Template used for each appraisal stage. Appraisals go into a monthly Appraisal Cycle that is created automatically."
+  },
+  {
+   "fieldname": "training_appraisal_template",
+   "fieldtype": "Link",
+   "label": "Training Appraisal Template",
+   "options": "Appraisal Template"
+  },
+  {
+   "fieldname": "column_break_appraisals",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "probation_appraisal_template",
+   "fieldtype": "Link",
+   "label": "Probation Appraisal Template",
+   "options": "Appraisal Template"
+  },
+  {
+   "fieldname": "annual_appraisal_template",
+   "fieldtype": "Link",
+   "label": "Annual Appraisal Template",
+   "options": "Appraisal Template"
+  },
+  {
    "fieldname": "certificates_section",
    "fieldtype": "Section Break",
    "label": "Certificates"
@@ -87,7 +133,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-09-05 00:00:00.000000",
+ "modified": "2026-10-29 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "HR Automation",
  "name": "HR Automation Settings",

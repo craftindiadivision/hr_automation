@@ -1,6 +1,8 @@
 import frappe
 from frappe import _
-from frappe.utils import get_url, random_string
+from frappe.utils import get_url, now_datetime, random_string
+
+from hr_automation.api.link_expiry import check_email_matches, check_not_expired
 
 ASSESSMENT_EMAIL_TEMPLATE = """
 <p>Hi {{ employee_name }},</p>
@@ -29,7 +31,10 @@ def send_assessment_if_configured(training_event: str, employee: str, employee_n
 
 	token = random_string(32)
 	frappe.db.set_value(
-		"Training Event Employee", event_employee_row, "custom_assessment_token", token, update_modified=False
+		"Training Event Employee",
+		event_employee_row,
+		{"custom_assessment_token": token, "custom_assessment_token_sent_at": now_datetime()},
+		update_modified=False,
 	)
 
 	event_name = frappe.db.get_value("Training Event", training_event, "event_name")
@@ -47,23 +52,89 @@ def send_assessment_if_configured(training_event: str, employee: str, employee_n
 	)
 
 
-def _resolve_assessment_token(token: str) -> dict:
+@frappe.whitelist()
+def resend_assessment_requests(training_event):
+	"""Manual fallback: (re)sends the assessment link to every employee who has
+	submitted feedback for this event but not yet submitted an assessment -
+	whether they were never sent one, or their original link has since expired."""
+	from hr_automation.api.training_feedback import ALLOWED_ROLES
+
+	frappe.only_for(ALLOWED_ROLES)
+
+	event = frappe.get_doc("Training Event", training_event)
+	if not event.custom_assessment_form:
+		frappe.throw(_("No Assessment Form is set up for this event"))
+
+	sent_count = 0
+	for row in event.employees:
+		if row.status != "Feedback Submitted":
+			continue
+		if frappe.db.exists("Training Assessment", {"employee": row.employee, "training_event": event.name}):
+			continue
+
+		email = (
+			frappe.db.get_value("Employee", row.employee, "user_id")
+			or frappe.db.get_value("Employee", row.employee, "company_email")
+			or frappe.db.get_value("Employee", row.employee, "personal_email")
+		)
+		if not email:
+			continue
+
+		token = row.custom_assessment_token or random_string(32)
+		frappe.db.set_value(
+			"Training Event Employee",
+			row.name,
+			{"custom_assessment_token": token, "custom_assessment_token_sent_at": now_datetime()},
+			update_modified=False,
+		)
+
+		assessment_url = get_url(f"/training-assessment?token={token}")
+		message = frappe.render_template(
+			ASSESSMENT_EMAIL_TEMPLATE,
+			{"employee_name": row.employee_name, "event_name": event.event_name, "assessment_url": assessment_url},
+		)
+		frappe.sendmail(
+			recipients=[email],
+			subject=_("Assessment: {0}").format(event.event_name),
+			message=message,
+			reference_doctype="Training Event",
+			reference_name=event.name,
+		)
+		sent_count += 1
+
+	return {"sent_count": sent_count}
+
+
+def _resolve_assessment_token(token: str, email: str) -> dict:
 	row = frappe.db.get_value(
 		"Training Event Employee",
 		{"custom_assessment_token": token},
-		["name", "parent", "employee", "employee_name"],
+		["name", "parent", "employee", "employee_name", "custom_assessment_token_sent_at"],
 		as_dict=True,
 	)
 	if not row:
 		frappe.throw(_("Invalid or expired link."), frappe.DoesNotExistError)
+
+	stored_email = (
+		frappe.db.get_value("Employee", row.employee, "user_id")
+		or frappe.db.get_value("Employee", row.employee, "company_email")
+		or frappe.db.get_value("Employee", row.employee, "personal_email")
+	)
+	check_email_matches(stored_email, email)
+
+	row["already_submitted"] = bool(
+		frappe.db.exists("Training Assessment", {"employee": row.employee, "training_event": row.parent})
+	)
+	if not row["already_submitted"]:
+		check_not_expired(row.custom_assessment_token_sent_at)
 	return row
 
 
 @frappe.whitelist(allow_guest=True)
-def get_assessment_by_token(token: str):
-	row = _resolve_assessment_token(token)
+def get_assessment_by_token(token: str, email: str):
+	row = _resolve_assessment_token(token, email)
 
-	if frappe.db.exists("Training Assessment", {"employee": row.employee, "training_event": row.parent}):
+	if row.already_submitted:
 		return {"already_submitted": True}
 
 	event = frappe.db.get_value(
@@ -87,12 +158,12 @@ def get_assessment_by_token(token: str):
 
 
 @frappe.whitelist(allow_guest=True)
-def submit_assessment_by_token(token: str, answers):
+def submit_assessment_by_token(token: str, email: str, answers):
 	if isinstance(answers, str):
 		answers = frappe.parse_json(answers)
 
-	row = _resolve_assessment_token(token)
-	if frappe.db.exists("Training Assessment", {"employee": row.employee, "training_event": row.parent}):
+	row = _resolve_assessment_token(token, email)
+	if row.already_submitted:
 		frappe.throw(_("An assessment has already been submitted for this training."))
 
 	form_name = frappe.db.get_value("Training Event", row.parent, "custom_assessment_form")

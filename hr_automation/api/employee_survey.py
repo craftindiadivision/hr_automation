@@ -2,6 +2,8 @@ import frappe
 from frappe import _
 from frappe.utils import get_url, getdate, now_datetime, random_string, today
 
+from hr_automation.api.link_expiry import check_not_expired
+
 SURVEY_EMAIL_TEMPLATE = """
 <p>Hi,</p>
 <p>You're invited to take part in a survey: <b>{{ title }}</b></p>
@@ -95,10 +97,15 @@ def _resolve_recipient(token: str) -> dict:
 		frappe.throw(_("Invalid or expired link."), frappe.DoesNotExistError)
 
 	recipient = frappe.db.get_value(
-		"Employee Survey Recipient", {"token": token}, ["name", "parent", "responded"], as_dict=True
+		"Employee Survey Recipient",
+		{"token": token},
+		["name", "parent", "responded", "notified_on"],
+		as_dict=True,
 	)
 	if not recipient:
 		frappe.throw(_("Invalid or expired link."), frappe.DoesNotExistError)
+	if not recipient.responded:
+		check_not_expired(recipient.notified_on)
 
 	return recipient
 

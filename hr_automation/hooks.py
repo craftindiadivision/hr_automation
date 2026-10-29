@@ -7,9 +7,29 @@ app_license = "mit"
 
 fixtures = [
 	{
+		"doctype": "Web Form",
+		"filters": [["name", "=", "job-application"]],
+	},
+	{
+		"doctype": "Leave Type",
+		"filters": [["name", "=", "Maternity Leave"]],
+	},
+	{
+		"doctype": "Workflow",
+		"filters": [["name", "=", "Compensatory Leave Request Workflow"]],
+	},
+	{
+		"doctype": "Workflow State",
+		"filters": [["name", "=", "Pending HR Approval"]],
+	},
+	{
+		"doctype": "Workflow Action Master",
+		"filters": [["name", "=", "Submit for HR Approval"]],
+	},
+	{
 		"doctype": "Custom Field",
 		"filters": [
-			["dt", "in", ["Appointment Letter", "Job Applicant", "Job Offer", "Employee Separation", "Employee", "Appraisal Cycle", "Appraisal", "Training Event", "Training Program", "Training Feedback", "Training Event Employee"]]
+			["dt", "in", ["Appointment Letter", "Job Applicant", "Interview", "Job Offer", "Employee Separation", "Employee", "Employee Onboarding", "Appraisal Cycle", "Appraisal", "Training Event", "Training Program", "Training Feedback", "Training Event Employee", "Interview Feedback", "Leave Type", "Leave Application", "Leave Period", "Leave Policy", "Holiday List", "Payroll Period"]]
 		],
 	},
 	{
@@ -49,6 +69,12 @@ fixtures = [
 					"Training Feedback-feedback-label",
 					"Training Program-is_tree",
 					"Training Program-nsm_parent_field",
+					"Job Offer-offer_terms-hidden",
+					"Job Offer-select_terms-hidden",
+					"Job Offer-terms-hidden",
+					"Job Offer-job_offer_term_template-hidden",
+					"Salary Structure-is_active-in_list_view",
+					"Appointment Letter-main-field_order",
 				],
 			]
 		],
@@ -100,17 +126,40 @@ boot_session = "hr_automation.boot.boot_session"
 # include js in doctype views
 doctype_js = {
 	"HR Policy": "public/js/hr_policy.js",
-	"Appointment Letter": ["public/js/salary_breakup.js", "public/js/appointment_letter.js"],
-	"Job Offer": ["public/js/salary_breakup.js", "public/js/job_offer.js"],
+	"Appointment Letter": [
+		"public/js/active_records.js",
+		"public/js/salary_breakup.js",
+		"public/js/appointment_letter.js",
+	],
+	"Job Offer": ["public/js/active_records.js", "public/js/salary_breakup.js", "public/js/job_offer.js"],
 	"Confidentiality and Non-Disclosure Agreement": "public/js/nda.js",
-	"Employee": "public/js/employee.js",
+	"Employee Onboarding": ["public/js/active_records.js", "public/js/employee_onboarding.js"],
+	"Leave Period": ["public/js/active_records.js", "public/js/leave_period.js"],
 	"Employee Survey": "public/js/employee_survey.js",
 	"Training Feedback": "public/js/training_feedback.js",
 	"Training Event": "public/js/training_event.js",
 	"Training Program": "public/js/training_program.js",
 	"Knowledge Hub": "public/js/knowledge_hub.js",
+	"Job Applicant": "public/js/job_applicant.js",
+	"Leave Application": "public/js/leave_application.js",
+	"Interview": "public/js/interview.js",
 }
-# doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
+# Green "Active" / grey "Inactive" in the list of each year-wise master
+doctype_list_js = {
+	doctype: "public/js/active_records.js"
+	for doctype in [
+		"Salary Structure",
+		"Leave Policy",
+		"Leave Period",
+		"Holiday List",
+		"Payroll Period",
+		"Income Tax Slab",
+		"Fiscal Year",
+	]
+}
+doctype_list_js["Appointment Letter"] = "public/js/appointment_letter_list.js"
+doctype_list_js["Job Offer"] = "public/js/job_offer_list.js"
+doctype_list_js["Employee"] = "public/js/employee_list.js"
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 
@@ -143,10 +192,9 @@ doctype_js = {
 # ----------
 
 # add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "hr_automation.utils.jinja_methods",
-# 	"filters": "hr_automation.utils.jinja_filters"
-# }
+jinja = {
+	"methods": ["hr_automation.jinja.get_logo_data_uri"],
+}
 
 # Installation
 # ------------
@@ -186,7 +234,7 @@ doctype_js = {
 # ------------------
 # See frappe.core.notifications.get_notification_config
 
-# notification_config = "hr_automation.notifications.get_notification_config"
+notification_config = "hr_automation.notifications.get_notification_config"
 
 # Permissions
 # -----------
@@ -210,6 +258,8 @@ has_permission = {
 
 override_doctype_class = {
 	"Training Program": "hr_automation.overrides.training_program.CustomTrainingProgram",
+	"Leave Policy Assignment": "hr_automation.overrides.leave_policy_assignment.CustomLeavePolicyAssignment",
+	"Interview": "hr_automation.overrides.interview.CustomInterview",
 }
 
 # Document Events
@@ -217,13 +267,65 @@ override_doctype_class = {
 # Hook on document methods and events
 
 doc_events = {
+	"Job Opening": {
+		"validate": "hr_automation.api.job_openings.set_default_application_web_form_route",
+	},
 	"Employee Separation": {
 		"validate": "hr_automation.api.employee_separation.sync_relieving_date_to_employee",
 	},
-	"Job Offer": {
-		"on_update": "hr_automation.api.recruitment_automation.on_job_offer_status_change",
+	"Leave Application": {
+		"before_validate": "hr_automation.api.date_validation.validate_probation_leave",
+		"validate": [
+			"hr_automation.api.date_validation.validate_not_backdated",
+			"hr_automation.api.date_validation.validate_leave_rules",
+			"hr_automation.api.date_validation.validate_leave_certificate",
+		],
+		"on_submit": "hr_automation.api.date_validation.consume_compensatory_request_on_submit",
+		"on_cancel": "hr_automation.api.date_validation.release_compensatory_request_on_cancel",
+	},
+	"Appointment Letter": {
+		"validate": "hr_automation.api.recruitment_automation.validate_appointment_status",
+		"on_update": "hr_automation.api.recruitment_automation.on_appointment_letter_update",
+	},
+	"Job Applicant": {
+		"on_update": "hr_automation.api.recruitment_automation.send_selection_email",
+	},
+	"Interview": {
+		"after_insert": "hr_automation.api.recruitment_automation.send_interview_scheduled_emails",
+		"validate": "hr_automation.api.recruitment_automation.set_interview_status_from_feedback",
+		"before_submit": "hr_automation.api.recruitment_automation.validate_final_round_gross_salary",
+		"on_submit": "hr_automation.api.recruitment_automation.store_final_round_gross_salary",
+	},
+	"Interview Feedback": {
+		"on_submit": "hr_automation.api.recruitment_automation.update_interview_status_from_feedback",
+		"on_cancel": "hr_automation.api.recruitment_automation.update_interview_status_from_feedback",
+	},
+	"Appraisal": {
+		"on_submit": [
+			"hr_automation.api.salary_revision.revise_salary_on_appraisal_submit",
+			"hr_automation.api.employee_confirmation.trigger_confirmation_on_appraisal_submit",
+			"hr_automation.api.employee_assessments.update_latest_appraisal_date",
+		],
+		"on_cancel": [
+			"hr_automation.api.salary_revision.cancel_revision_on_appraisal_cancel",
+			"hr_automation.api.employee_assessments.update_latest_appraisal_date",
+		],
+	},
+	"Salary Structure Assignment": {
+		"on_submit": "hr_automation.api.salary_revision.sync_employee_salary",
+		"on_cancel": "hr_automation.api.salary_revision.sync_employee_salary",
+	},
+	"Attendance Request": {
+		"validate": "hr_automation.api.date_validation.validate_not_backdated",
+	},
+	"Employee Onboarding": {
+		"on_update_after_submit": "hr_automation.api.employee_onboarding.create_employee_on_completion",
 	},
 	"Employee": {
+		"validate": [
+			"hr_automation.api.leave_management.set_probation_end_date",
+			"hr_automation.api.employee_assessments.set_next_appraisal_date",
+		],
 		"after_insert": [
 			"hr_automation.api.employee_onboarding.create_onboarding_program",
 			"hr_automation.api.hr_policy.add_employee_to_all_policies",
@@ -264,9 +366,17 @@ doc_events = {
 # ---------------
 
 scheduler_events = {
+	"hourly": [
+		"hr_automation.api.recruitment_automation.notify_stale_pending_actions",
+	],
 	"daily": [
 		"hr_automation.api.employee_assessments.send_assessment_notifications",
+		"hr_automation.api.performance_feedback.send_pending_requests",
 		"hr_automation.api.training_calendar.send_event_reminders",
+		"hr_automation.api.recruitment_automation.notify_next_phase_due",
+		"hr_automation.api.payroll_automation.auto_create_monthly_payroll_entry",
+		"hr_automation.api.leave_management.allocate_probation_leave",
+		"hr_automation.api.leave_management.allocate_regular_leave",
 	],
 }
 
@@ -293,9 +403,10 @@ scheduler_events = {
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
 # along with any modifications made in other Frappe apps
-# override_doctype_dashboards = {
-# 	"Task": "hr_automation.task.get_dashboard_data"
-# }
+override_doctype_dashboards = {
+	"Appointment Letter": "hr_automation.overrides.appointment_letter.get_dashboard_for_appointment_letter",
+	"Training Event": "hr_automation.overrides.training_event.get_dashboard_for_training_event",
+}
 
 # exempt linked doctypes from being automatically cancelled
 #

@@ -10,80 +10,156 @@
 	</style>
 </head>
 <body style="font-family:sans-serif;max-width:560px;margin:60px auto;padding:0 16px;color:#1a1a1a;">
-{% if not valid %}
-	<h3>Invalid or expired link</h3>
+{% if invalid %}
+	<h3>Invalid Link</h3>
 	<p>Please contact HR for a new link.</p>
-{% elif submitted %}
-	<h3>Self Appraisal Already Submitted</h3>
-	<p>Thank you, {{ employee_name }} — your self appraisal has already been recorded.</p>
+{% elif expired %}
+	<h3>Expired Link</h3>
+	<p>This link has expired. Please contact HR.</p>
 {% else %}
-	<h3>Self Appraisal</h3>
-	<p>{{ employee_name }}, please rate yourself on each criterion below and share your reflections.</p>
-	<form id="appraisal-form">
-		{% for row in ratings %}
-		<div style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #eee;">
-			<div style="font-weight:600;">{{ row.criteria }} <span style="font-weight:400;color:#888;">({{ row.weightage }}%)</span></div>
-			<div class="star-row" data-row-name="{{ row.name }}">
-				{% for i in range(1, 6) %}
-				<span class="star{% if row.rating * 5 >= i %} filled{% endif %}" data-value="{{ i }}">&#9733;</span>
-				{% endfor %}
-			</div>
-		</div>
-		{% endfor %}
-		<div style="margin-bottom:16px;">
-			<label style="font-weight:600;display:block;margin-bottom:6px;">Reflections</label>
-			<textarea id="reflections" rows="5" style="width:100%;padding:8px;box-sizing:border-box;">{{ reflections }}</textarea>
-		</div>
-		<button type="submit" style="padding:8px 20px;background:#2e7d32;color:#fff;border:none;
-			border-radius:4px;cursor:pointer;">Submit</button>
-	</form>
-	<p id="status" style="margin-top:16px;"></p>
+	<div id="email-gate">
+		<h3>Self Appraisal</h3>
+		<p>Please confirm the email address this link was sent to:</p>
+		<form id="email-gate-form">
+			<input type="email" id="gate-email" required placeholder="you@example.com"
+				style="width:100%;padding:8px;box-sizing:border-box;">
+			<button type="submit" style="margin-top:16px;padding:8px 20px;background:#2e7d32;color:#fff;
+				border:none;border-radius:4px;cursor:pointer;">Continue</button>
+			<p id="gate-status" style="margin-top:12px;color:#c62828;"></p>
+		</form>
+	</div>
+
+	<div id="app"></div>
+
 	<script>
-		document.querySelectorAll(".star-row").forEach(function (row) {
-			row.addEventListener("click", function (e) {
-				if (!e.target.classList.contains("star")) return;
-				var value = parseInt(e.target.getAttribute("data-value"), 10);
-				row.querySelectorAll(".star").forEach(function (star) {
-					var starValue = parseInt(star.getAttribute("data-value"), 10);
-					star.classList.toggle("filled", starValue <= value);
-				});
-				row.setAttribute("data-selected", value);
-			});
-		});
+		var token = {{ (token or "") | tojson }};
+		var confirmedEmail = "";
 
-		document.getElementById("appraisal-form").addEventListener("submit", function (e) {
-			e.preventDefault();
-			var statusEl = document.getElementById("status");
-			var ratings = [];
-			document.querySelectorAll(".star-row").forEach(function (row) {
-				var selected = row.getAttribute("data-selected");
-				var filledCount = row.querySelectorAll(".star.filled").length;
-				var stars = selected ? parseInt(selected, 10) : filledCount;
-				ratings.push({ name: row.getAttribute("data-row-name"), rating: stars / 5 });
-			});
+		function extractMessage(data) {
+			try {
+				var messages = JSON.parse(data._server_messages);
+				return JSON.parse(messages[0]).message;
+			} catch (e) { /* fall through */ }
+			return null;
+		}
 
-			statusEl.innerText = "Submitting...";
-			fetch("/api/method/hr_automation.api.self_appraisal.submit_self_appraisal", {
+		function call(method, args) {
+			return fetch("/api/method/" + method, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					token: "{{ token }}",
-					ratings: ratings,
-					reflections: document.getElementById("reflections").value,
-				}),
-			})
-				.then(function (r) {
-					if (!r.ok) throw new Error("submit failed");
-					return r.json();
+				body: JSON.stringify(args),
+			}).then(function (r) {
+				return r.json().then(function (data) {
+					if (!r.ok) throw new Error(extractMessage(data) || "Request failed");
+					return data.message;
+				});
+			});
+		}
+
+		function escapeHtml(s) {
+			var div = document.createElement("div");
+			div.innerText = s || "";
+			return div.innerHTML;
+		}
+
+		document.getElementById("email-gate-form").addEventListener("submit", function (e) {
+			e.preventDefault();
+			var email = document.getElementById("gate-email").value.trim();
+			var gateStatus = document.getElementById("gate-status");
+			gateStatus.innerText = "Checking...";
+			call("hr_automation.api.self_appraisal.get_self_appraisal_by_token", { token: token, email: email })
+				.then(function (data) {
+					confirmedEmail = email;
+					document.getElementById("email-gate").style.display = "none";
+					if (data.submitted) {
+						renderSubmitted(data);
+					} else {
+						renderForm(data);
+					}
 				})
-				.then(function () {
-					statusEl.innerText = "Thank you! Your self appraisal has been submitted.";
-					document.getElementById("appraisal-form").style.display = "none";
-				})
-				.catch(function () {
-					statusEl.innerText = "Submission failed. Please try again.";
+				.catch(function (e) {
+					gateStatus.innerText = e.message || "That didn't match. Please try again.";
 				});
 		});
+
+		function renderSubmitted(data) {
+			document.getElementById("app").innerHTML =
+				"<h3>Self Appraisal Already Submitted</h3>" +
+				"<p>Thank you, " + escapeHtml(data.employee_name) +
+				" — your self appraisal has already been recorded.</p>";
+		}
+
+		function renderForm(data) {
+			var html =
+				"<h3>Self Appraisal</h3>" +
+				"<p>" + escapeHtml(data.employee_name) +
+				", please rate yourself on each criterion below and share your reflections.</p>" +
+				'<form id="appraisal-form">';
+
+			data.ratings.forEach(function (row) {
+				html +=
+					'<div style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #eee;">' +
+					'<div style="font-weight:600;">' + escapeHtml(row.criteria) +
+					' <span style="font-weight:400;color:#888;">(' + row.weightage + '%)</span></div>' +
+					'<div class="star-row" data-row-name="' + row.name + '">';
+				for (var i = 1; i <= 5; i++) {
+					html += '<span class="star' + (row.rating * 5 >= i ? " filled" : "") +
+						'" data-value="' + i + '">&#9733;</span>';
+				}
+				html += "</div></div>";
+			});
+
+			html +=
+				'<div style="margin-bottom:16px;">' +
+				'<label style="font-weight:600;display:block;margin-bottom:6px;">Reflections</label>' +
+				'<textarea id="reflections" rows="5" style="width:100%;padding:8px;box-sizing:border-box;">' +
+				escapeHtml(data.reflections) + "</textarea></div>" +
+				'<button type="submit" style="padding:8px 20px;background:#2e7d32;color:#fff;border:none;' +
+				'border-radius:4px;cursor:pointer;">Submit</button>' +
+				"</form>" +
+				'<p id="status" style="margin-top:16px;"></p>';
+
+			document.getElementById("app").innerHTML = html;
+
+			document.querySelectorAll(".star-row").forEach(function (row) {
+				row.addEventListener("click", function (e) {
+					if (!e.target.classList.contains("star")) return;
+					var value = parseInt(e.target.getAttribute("data-value"), 10);
+					row.querySelectorAll(".star").forEach(function (star) {
+						var starValue = parseInt(star.getAttribute("data-value"), 10);
+						star.classList.toggle("filled", starValue <= value);
+					});
+					row.setAttribute("data-selected", value);
+				});
+			});
+
+			document.getElementById("appraisal-form").addEventListener("submit", function (e) {
+				e.preventDefault();
+				var statusEl = document.getElementById("status");
+				var ratings = [];
+				document.querySelectorAll(".star-row").forEach(function (row) {
+					var selected = row.getAttribute("data-selected");
+					var filledCount = row.querySelectorAll(".star.filled").length;
+					var stars = selected ? parseInt(selected, 10) : filledCount;
+					ratings.push({ name: row.getAttribute("data-row-name"), rating: stars / 5 });
+				});
+
+				statusEl.innerText = "Submitting...";
+				call("hr_automation.api.self_appraisal.submit_self_appraisal", {
+					token: token,
+					email: confirmedEmail,
+					ratings: ratings,
+					reflections: document.getElementById("reflections").value,
+				})
+					.then(function () {
+						statusEl.innerText = "Thank you! Your self appraisal has been submitted.";
+						document.getElementById("appraisal-form").style.display = "none";
+					})
+					.catch(function (e) {
+						statusEl.innerText = e.message || "Submission failed. Please try again.";
+					});
+			});
+		}
 	</script>
 {% endif %}
 </body>

@@ -544,6 +544,8 @@ def create_events_from_schedule(training_program: str):
 	frappe.only_for(ALLOWED_ROLES)
 
 	program = frappe.get_doc("Training Program", training_program)
+	if program.custom_number_of_events and program.custom_completed_events >= program.custom_number_of_events:
+		frappe.throw(_("This Training Program is completed, so no new events can be created"))
 	created = 0
 
 	for row in program.custom_scheduled_sessions:

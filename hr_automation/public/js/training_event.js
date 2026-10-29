@@ -15,6 +15,20 @@ frappe.ui.form.on("Training Event", {
 		if (ended || is_completed_status) {
 			frm.add_custom_button(__("Send Feedback Form"), () => open_send_feedback_dialog(frm));
 		}
+
+		if (frm.doc.custom_assessment_form) {
+			frm.add_custom_button(__("Resend Assessment"), () => {
+				frappe.call({
+					method: "hr_automation.api.training_assessment.resend_assessment_requests",
+					args: { training_event: frm.doc.name },
+					freeze: true,
+					freeze_message: __("Sending..."),
+					callback(r) {
+						frappe.msgprint(__("Assessment sent to {0} employee(s).", [r.message.sent_count]));
+					},
+				});
+			});
+		}
 	},
 });
 
@@ -39,6 +53,12 @@ function open_send_feedback_dialog(frm) {
 				default: frm.doc.custom_assessment_form,
 				description: __("If set, emailed automatically to each employee the moment they submit their feedback."),
 			},
+			{
+				fieldtype: "Check",
+				fieldname: "resend",
+				label: __("Resend to employees who haven't responded yet"),
+				description: __("Leave unticked to send only to employees who haven't been invited yet."),
+			},
 		],
 		primary_action_label: __("Send"),
 		primary_action(values) {
@@ -48,6 +68,7 @@ function open_send_feedback_dialog(frm) {
 					training_event: frm.doc.name,
 					feedback_form: values.feedback_form,
 					assessment_form: values.assessment_form,
+					resend: values.resend,
 				},
 				freeze: true,
 				freeze_message: __("Sending..."),

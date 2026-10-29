@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Job Offer Response</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<style>
+		body { font-family: sans-serif; max-width: 480px; margin: 80px auto; padding: 0 16px; color: #1a1a1a; }
+		.notice { padding: 16px; background: #f5f5f5; border-radius: 6px; }
+	</style>
+</head>
+<body>
+{% if invalid %}
+	<h3>Invalid Link</h3>
+	<p>This link is invalid. Please contact HR.</p>
+{% elif expired %}
+	<h3>Expired Link</h3>
+	<p>This link has expired. Please contact HR.</p>
+{% else %}
+	<div id="app">
+		<h3>{{ "Accept" if response == "Accepted" else "Decline" }} Job Offer</h3>
+		<p>Please confirm the email address this offer was sent to:</p>
+		<form id="confirm-form">
+			<input type="email" id="confirm-email" required placeholder="you@example.com"
+				style="width:100%;padding:8px;box-sizing:border-box;">
+			<button type="submit" style="margin-top:16px;padding:10px 24px;
+				background:{{ '#2e7d32' if response == 'Accepted' else '#c62828' }};color:#fff;
+				border:none;border-radius:4px;cursor:pointer;font-size:14px;">
+				Confirm {{ "Acceptance" if response == "Accepted" else "Decline" }}
+			</button>
+			<p id="confirm-status" style="margin-top:12px;color:#c62828;"></p>
+		</form>
+	</div>
+
+	<script>
+		var token = {{ (token or "") | tojson }};
+		var response = {{ (response or "") | tojson }};
+
+		document.getElementById("confirm-form").addEventListener("submit", function (e) {
+			e.preventDefault();
+			var email = document.getElementById("confirm-email").value.trim();
+			var statusEl = document.getElementById("confirm-status");
+			statusEl.style.color = "#555";
+			statusEl.innerText = "Submitting...";
+
+			fetch("/api/method/hr_automation.api.recruitment_automation.respond_to_offer", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ token: token, response: response, email: email }),
+			})
+				.then(function (r) {
+					return r.json().then(function (data) {
+						if (!r.ok) {
+							var message = null;
+							try {
+								var messages = JSON.parse(data._server_messages);
+								message = JSON.parse(messages[0]).message;
+							} catch (e) { /* fall through */ }
+							throw new Error(message || "Something went wrong. Please try again.");
+						}
+						return data.message;
+					});
+				})
+				.then(function (result) {
+					var app = document.getElementById("app");
+					if (result.status === "already_responded") {
+						app.innerHTML = "<h3>Already Responded</h3><p>This offer has already been marked as " +
+							result.response + ".</p>";
+					} else {
+						app.innerHTML = "<h3>Thank You</h3><p>Your response (" + result.response +
+							") has been recorded.</p>";
+					}
+				})
+				.catch(function (e) {
+					statusEl.style.color = "#c62828";
+					statusEl.innerText = e.message || "Something went wrong. Please try again.";
+				});
+		});
+	</script>
+{% endif %}
+</body>
+</html>

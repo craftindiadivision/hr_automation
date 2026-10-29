@@ -1,10 +1,8 @@
-const DOWNLOAD_ALLOWED_ROLES = ["System Manager", "HR Manager", "HR User", "Managing Director"];
-
 frappe.ui.form.on("Knowledge Hub", {
 	refresh: function (frm) {
 		render_preview(frm);
 		listen_for_pdf(frm);
-		hide_attachments_for_non_directors(frm);
+		hide_attachments(frm);
 	},
 	onload: function (frm) {
 		frm.set_query("training_event", function () {
@@ -13,13 +11,7 @@ frappe.ui.form.on("Knowledge Hub", {
 	},
 });
 
-function hide_attachments_for_non_directors(frm) {
-	// The Attachments panel in the sidebar lists every file on this record
-	// regardless of any field's own permission level - so it has to be hidden
-	// separately, or the master PDF/PPT would still be reachable from there.
-	let can_download = DOWNLOAD_ALLOWED_ROLES.some((role) => frappe.user_roles.includes(role));
-	if (can_download) return;
-
+function hide_attachments(frm) {
 	frm.sidebar.sidebar.find(".form-attachments").hide();
 }
 

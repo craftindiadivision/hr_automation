@@ -90,7 +90,8 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
-   "write": 1
+   "write": 1,
+   "print": 1
   },
   {
    "create": 1,
@@ -100,7 +101,8 @@
    "report": 1,
    "role": "HR Manager",
    "share": 1,
-   "write": 1
+   "write": 1,
+   "print": 1
   },
   {
    "create": 1,
@@ -109,7 +111,8 @@
    "report": 1,
    "role": "HR User",
    "share": 1,
-   "write": 1
+   "write": 1,
+   "print": 1
   },
   {
    "email": 1,
@@ -138,6 +141,17 @@
    "permlevel": 1,
    "read": 1,
    "role": "Managing Director"
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Managing Director",
+   "share": 1,
+   "write": 1,
+   "print": 1,
+   "permlevel": 0
   }
  ],
  "sort_field": "creation",

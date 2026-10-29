@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Manager Feedback</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<style>
+	</style>
+</head>
+<body style="font-family:sans-serif;max-width:560px;margin:60px auto;padding:0 16px;color:#1a1a1a;">
+{% if invalid %}
+	<h3>Invalid Link</h3>
+	<p>Please contact HR for a new link.</p>
+{% elif expired %}
+	<h3>Expired Link</h3>
+	<p>This link has expired. Please contact HR.</p>
+{% else %}
+	<div id="email-gate">
+		<h3>Manager Feedback</h3>
+		<p>Please confirm the email address this link was sent to:</p>
+		<form id="email-gate-form">
+			<input type="email" id="gate-email" required placeholder="you@example.com"
+				style="width:100%;padding:8px;box-sizing:border-box;">
+			<button type="submit" style="margin-top:16px;padding:8px 20px;background:#2e7d32;color:#fff;
+				border:none;border-radius:4px;cursor:pointer;">Continue</button>
+			<p id="gate-status" style="margin-top:12px;color:#c62828;"></p>
+		</form>
+	</div>
+
+	<div id="app"></div>
+
+	<script>
+		var token = {{ (token or "") | tojson }};
+		var confirmedEmail = "";
+
+		function extractMessage(data) {
+			try {
+				var messages = JSON.parse(data._server_messages);
+				return JSON.parse(messages[0]).message;
+			} catch (e) { /* fall through */ }
+			return null;
+		}
+
+		function call(method, args) {
+			return fetch("/api/method/" + method, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(args),
+			}).then(function (r) {
+				return r.json().then(function (data) {
+					if (!r.ok) throw new Error(extractMessage(data) || "Request failed");
+					return data.message;
+				});
+			});
+		}
+
+		function escapeHtml(s) {
+			var div = document.createElement("div");
+			div.innerText = s || "";
+			return div.innerHTML;
+		}
+
+		document.getElementById("email-gate-form").addEventListener("submit", function (e) {
+			e.preventDefault();
+			var email = document.getElementById("gate-email").value.trim();
+			var gateStatus = document.getElementById("gate-status");
+			gateStatus.innerText = "Checking...";
+			call("hr_automation.api.performance_feedback.get_feedback_form", { token: token, email: email })
+				.then(function (data) {
+					confirmedEmail = email;
+					document.getElementById("email-gate").style.display = "none";
+					if (data.submitted) {
+						renderSubmitted(data);
+					} else {
+						renderForm(data);
+					}
+				})
+				.catch(function (e) {
+					gateStatus.innerText = e.message || "That didn't match. Please try again.";
+				});
+		});
+
+		function renderSubmitted(data) {
+			document.getElementById("app").innerHTML =
+				"<h3>Feedback Already Submitted</h3>" +
+				"<p>Your feedback for " + escapeHtml(data.employee_name) + " has already been recorded. Thank you.</p>";
+		}
+
+		function renderForm(data) {
+			var area = function (id, label, required) {
+				return '<div style="margin-bottom:16px;">' +
+					'<label for="' + id + '" style="font-weight:600;display:block;margin-bottom:6px;">' + label +
+					(required ? "" : ' <span style="font-weight:400;color:#888;">(optional)</span>') + "</label>" +
+					'<textarea id="' + id + '" rows="5"' + (required ? " required" : "") +
+					' style="width:100%;padding:8px;box-sizing:border-box;"></textarea></div>';
+			};
+			document.getElementById("app").innerHTML =
+				"<h3>Feedback for " + escapeHtml(data.employee_name) + "</h3>" +
+				"<p>" + escapeHtml(data.reviewer_name) + ", " + escapeHtml(data.employee_name) +
+				(data.designation ? " (" + escapeHtml(data.designation) + ")" : "") +
+				" has their " + escapeHtml((data.stage || "").toLowerCase()) + " appraisal on <b>" + escapeHtml(data.due) +
+				"</b>. Your feedback is sent to them right away so they can work on it before the appraisal.</p>" +
+				'<form id="feedback-form">' +
+				area("going_well", "What is going well", true) +
+				area("to_improve", "What to improve before the appraisal", true) +
+				area("other_comments", "Other comments", false) +
+				'<button type="submit" style="padding:8px 20px;background:#2e7d32;color:#fff;border:none;' +
+				'border-radius:4px;cursor:pointer;">Submit Feedback</button>' +
+				"</form>" +
+				'<p id="status" style="margin-top:16px;"></p>';
+
+			document.getElementById("feedback-form").addEventListener("submit", function (e) {
+				e.preventDefault();
+				var statusEl = document.getElementById("status");
+				statusEl.innerText = "Submitting...";
+				call("hr_automation.api.performance_feedback.submit_feedback", {
+					token: token,
+					email: confirmedEmail,
+					going_well: document.getElementById("going_well").value,
+					to_improve: document.getElementById("to_improve").value,
+					other_comments: document.getElementById("other_comments").value,
+				})
+					.then(function () {
+						statusEl.innerText = "Thank you! Your feedback has been submitted and shared with " +
+							data.employee_name + ".";
+						document.getElementById("feedback-form").style.display = "none";
+					})
+					.catch(function (e) {
+						statusEl.innerText = e.message || "Submission failed. Please try again.";
+					});
+			});
+		}
+	</script>
+{% endif %}
+</body>
+</html>

@@ -16,168 +16,174 @@
 	</style>
 </head>
 <body>
-{% if not valid %}
-	<h3>Invalid or expired link</h3>
+{% if invalid %}
+	<h3>Invalid Link</h3>
 	<p>Please contact HR for a new link.</p>
-{% elif submitted %}
-	<h3>Onboarding Details Already Submitted</h3>
-	<p>Thank you, {{ employee_name }} — your onboarding details have already been recorded.</p>
+{% elif expired %}
+	<h3>Expired Link</h3>
+	<p>This link has expired. Please contact HR.</p>
 {% else %}
-	<h3>Onboarding Details</h3>
-	<p>{{ employee_name }}, please fill in your details below.</p>
-	<form id="onboarding-form">
-		<fieldset>
-			<legend>Personal</legend>
-			<label>Date of Birth</label>
-			<input type="date" name="date_of_birth" value="{{ values.date_of_birth or '' }}">
-			<label>Personal Email</label>
-			<input type="email" name="personal_email" value="{{ values.personal_email or '' }}">
-			<label>Contact Number</label>
-			<input type="text" name="cell_number" value="{{ values.cell_number or '' }}">
-			<div class="row">
-				<div>
-					<label>Marital Status</label>
-					<select name="marital_status">
-						<option value="">Select</option>
-						{% for opt in ["Single", "Married", "Divorced", "Widowed"] %}
-						<option value="{{ opt }}" {% if values.marital_status == opt %}selected{% endif %}>{{ opt }}</option>
-						{% endfor %}
-					</select>
-				</div>
-				<div>
-					<label>Blood Group</label>
-					<select name="blood_group">
-						<option value="">Select</option>
-						{% for opt in ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] %}
-						<option value="{{ opt }}" {% if values.blood_group == opt %}selected{% endif %}>{{ opt }}</option>
-						{% endfor %}
-					</select>
-				</div>
-			</div>
-		</fieldset>
+	<div id="email-gate">
+		<h3>Onboarding Details</h3>
+		<p>Please confirm the email address this link was sent to:</p>
+		<form id="email-gate-form">
+			<input type="email" id="gate-email" required placeholder="you@example.com">
+			<button type="submit" style="margin-top:16px;padding:10px 24px;background:#2e7d32;color:#fff;
+				border:none;border-radius:4px;cursor:pointer;font-size:14px;">Continue</button>
+			<p id="gate-status" style="margin-top:12px;color:#c62828;"></p>
+		</form>
+	</div>
 
-		<fieldset>
-			<legend>Address</legend>
-			<label>Current Address</label>
-			<textarea name="current_address" rows="2">{{ values.current_address or '' }}</textarea>
-			<label>Permanent Address</label>
-			<textarea name="permanent_address" rows="2">{{ values.permanent_address or '' }}</textarea>
-		</fieldset>
+	<div id="app"></div>
 
-		<fieldset>
-			<legend>Identification</legend>
-			<div class="row">
-				<div>
-					<label>Aadhaar Number</label>
-					<input type="text" name="custom_aadhaar_number" value="{{ values.custom_aadhaar_number or '' }}">
-				</div>
-				<div>
-					<label>PAN</label>
-					<input type="text" name="pan_number" value="{{ values.pan_number or '' }}">
-				</div>
-			</div>
-		</fieldset>
-
-		<fieldset>
-			<legend>Family Background</legend>
-			<label>Father's Name</label>
-			<input type="text" name="father_name">
-			<label>Mother's Name</label>
-			<input type="text" name="mother_name">
-			<label>Mother's Occupation</label>
-			<input type="text" name="mother_occupation">
-			<label>Spouse Name (if married)</label>
-			<input type="text" name="spouse_name">
-		</fieldset>
-
-		<fieldset>
-			<legend>Emergency Contact</legend>
-			<label>Emergency Contact Name</label>
-			<input type="text" name="person_to_be_contacted" value="{{ values.person_to_be_contacted or '' }}">
-			<div class="row">
-				<div>
-					<label>Emergency Phone</label>
-					<input type="text" name="emergency_phone_number" value="{{ values.emergency_phone_number or '' }}">
-				</div>
-				<div>
-					<label>Relation</label>
-					<input type="text" name="relation" value="{{ values.relation or '' }}">
-				</div>
-			</div>
-		</fieldset>
-
-		<fieldset>
-			<legend>Health</legend>
-			<label>Health Details</label>
-			<textarea name="health_details" rows="2">{{ values.health_details or '' }}</textarea>
-			<div class="row">
-				<div>
-					<label>Health Insurance Provider</label>
-					<input type="text" name="health_insurance_provider" value="{{ values.health_insurance_provider or '' }}">
-				</div>
-				<div>
-					<label>Health Insurance No</label>
-					<input type="text" name="health_insurance_no" value="{{ values.health_insurance_no or '' }}">
-				</div>
-			</div>
-		</fieldset>
-
-		<fieldset>
-			<legend>Provident Fund</legend>
-			<label>Provident Fund Account</label>
-			<input type="text" name="provident_fund_account" value="{{ values.provident_fund_account or '' }}">
-		</fieldset>
-
-		<fieldset>
-			<legend>Passport Details</legend>
-			<label>Passport Number</label>
-			<input type="text" name="passport_number" value="{{ values.passport_number or '' }}">
-			<div class="row">
-				<div>
-					<label>Date of Issue</label>
-					<input type="date" name="date_of_issue" value="{{ values.date_of_issue or '' }}">
-				</div>
-				<div>
-					<label>Valid Up To</label>
-					<input type="date" name="valid_upto" value="{{ values.valid_upto or '' }}">
-				</div>
-			</div>
-			<label>Place of Issue</label>
-			<input type="text" name="place_of_issue" value="{{ values.place_of_issue or '' }}">
-		</fieldset>
-
-		<button type="submit" style="margin-top:16px;padding:10px 24px;background:#2e7d32;color:#fff;
-			border:none;border-radius:4px;cursor:pointer;font-size:14px;">Submit</button>
-	</form>
-	<p id="status" style="margin-top:16px;"></p>
 	<script>
-		document.getElementById("onboarding-form").addEventListener("submit", function (e) {
-			e.preventDefault();
-			var statusEl = document.getElementById("status");
-			var formData = new FormData(e.target);
-			var payload = { token: "{{ token }}" };
-			formData.forEach(function (value, key) {
-				payload[key] = value;
-			});
+		var token = {{ (token or "") | tojson }};
+		var confirmedEmail = "";
 
-			statusEl.innerText = "Submitting...";
-			fetch("/api/method/hr_automation.api.onboarding_details.submit_onboarding_details", {
+		function extractMessage(data) {
+			try {
+				var messages = JSON.parse(data._server_messages);
+				return JSON.parse(messages[0]).message;
+			} catch (e) { /* fall through */ }
+			return null;
+		}
+
+		function call(method, args) {
+			return fetch("/api/method/" + method, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(payload),
-			})
-				.then(function (r) {
-					if (!r.ok) throw new Error("submit failed");
-					return r.json();
+				body: JSON.stringify(args),
+			}).then(function (r) {
+				return r.json().then(function (data) {
+					if (!r.ok) throw new Error(extractMessage(data) || "Request failed");
+					return data.message;
+				});
+			});
+		}
+
+		document.getElementById("email-gate-form").addEventListener("submit", function (e) {
+			e.preventDefault();
+			var email = document.getElementById("gate-email").value.trim();
+			var gateStatus = document.getElementById("gate-status");
+			gateStatus.innerText = "Checking...";
+			call("hr_automation.api.onboarding_details.get_onboarding_form_data", { token: token, email: email })
+				.then(function (data) {
+					confirmedEmail = email;
+					document.getElementById("email-gate").style.display = "none";
+					if (data.submitted) {
+						renderSubmitted(data);
+					} else {
+						renderForm(data);
+					}
 				})
-				.then(function () {
-					statusEl.innerText = "Thank you! Your onboarding details have been submitted.";
-					document.getElementById("onboarding-form").style.display = "none";
-				})
-				.catch(function () {
-					statusEl.innerText = "Submission failed. Please try again.";
+				.catch(function (e) {
+					gateStatus.innerText = e.message || "That didn't match. Please try again.";
 				});
 		});
+
+		function renderSubmitted(data) {
+			document.getElementById("app").innerHTML =
+				"<h3>Onboarding Details Already Submitted</h3>" +
+				"<p>Thank you, " + escapeHtml(data.applicant_name) +
+				" — your onboarding details have already been recorded.</p>";
+		}
+
+		function escapeHtml(s) {
+			var div = document.createElement("div");
+			div.innerText = s || "";
+			return div.innerHTML;
+		}
+
+		function renderForm(data) {
+			var v = data.values || {};
+			var maritalOptions = ["Single", "Married", "Divorced", "Widowed"];
+			var bloodOptions = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
+			function optionsHtml(options, selected) {
+				return '<option value="">Select</option>' + options.map(function (opt) {
+					return '<option value="' + opt + '"' + (selected === opt ? " selected" : "") + ">" + opt + "</option>";
+				}).join("");
+			}
+
+			var html =
+				"<h3>Onboarding Details</h3>" +
+				"<p>" + escapeHtml(data.applicant_name) + ", please fill in your details below.</p>" +
+				'<form id="onboarding-form">' +
+				"<fieldset><legend>Personal</legend>" +
+				'<label>Personal Email</label><input type="email" name="personal_email" value="' + escapeHtml(v.personal_email) + '">' +
+				'<label>Contact Number</label><input type="text" name="cell_number" value="' + escapeHtml(v.cell_number) + '">' +
+				'<div class="row"><div><label>Marital Status</label><select name="marital_status">' +
+				optionsHtml(maritalOptions, v.marital_status) + "</select></div>" +
+				'<div><label>Blood Group</label><select name="blood_group">' +
+				optionsHtml(bloodOptions, v.blood_group) + "</select></div></div>" +
+				"</fieldset>" +
+
+				"<fieldset><legend>Address</legend>" +
+				'<label>Current Address</label><textarea name="current_address" rows="2">' + escapeHtml(v.current_address) + "</textarea>" +
+				'<label>Permanent Address</label><textarea name="permanent_address" rows="2">' + escapeHtml(v.permanent_address) + "</textarea>" +
+				"</fieldset>" +
+
+				"<fieldset><legend>Identification</legend>" +
+				'<div class="row"><div><label>Aadhaar Number</label><input type="text" name="custom_aadhaar_number" value="' + escapeHtml(v.custom_aadhaar_number) + '"></div>' +
+				'<div><label>PAN</label><input type="text" name="pan_number" value="' + escapeHtml(v.pan_number) + '"></div></div>' +
+				"</fieldset>" +
+
+				"<fieldset><legend>Family Background</legend>" +
+				'<label>Father\'s Name</label><input type="text" name="father_name">' +
+				'<label>Mother\'s Name</label><input type="text" name="mother_name">' +
+				'<label>Spouse Name (if married)</label><input type="text" name="spouse_name">' +
+				"</fieldset>" +
+
+				"<fieldset><legend>Emergency Contact</legend>" +
+				'<label>Emergency Contact Name</label><input type="text" name="person_to_be_contacted" value="' + escapeHtml(v.person_to_be_contacted) + '">' +
+				'<div class="row"><div><label>Emergency Phone</label><input type="text" name="emergency_phone_number" value="' + escapeHtml(v.emergency_phone_number) + '"></div>' +
+				'<div><label>Relation</label><input type="text" name="relation" value="' + escapeHtml(v.relation) + '"></div></div>' +
+				"</fieldset>" +
+
+				"<fieldset><legend>Health</legend>" +
+				'<label>Health Details</label><textarea name="health_details" rows="2">' + escapeHtml(v.health_details) + "</textarea>" +
+				'<div class="row"><div><label>Health Insurance Provider</label><input type="text" name="health_insurance_provider" value="' + escapeHtml(v.health_insurance_provider) + '"></div>' +
+				'<div><label>Health Insurance No</label><input type="text" name="health_insurance_no" value="' + escapeHtml(v.health_insurance_no) + '"></div></div>' +
+				"</fieldset>" +
+
+				"<fieldset><legend>Provident Fund</legend>" +
+				'<label>Provident Fund Account</label><input type="text" name="provident_fund_account" value="' + escapeHtml(v.provident_fund_account) + '">' +
+				"</fieldset>" +
+
+				"<fieldset><legend>Passport Details</legend>" +
+				'<label>Passport Number</label><input type="text" name="passport_number" value="' + escapeHtml(v.passport_number) + '">' +
+				'<div class="row"><div><label>Date of Issue</label><input type="date" name="date_of_issue" value="' + escapeHtml(v.date_of_issue) + '"></div>' +
+				'<div><label>Valid Up To</label><input type="date" name="valid_upto" value="' + escapeHtml(v.valid_upto) + '"></div></div>' +
+				'<label>Place of Issue</label><input type="text" name="place_of_issue" value="' + escapeHtml(v.place_of_issue) + '">' +
+				"</fieldset>" +
+
+				'<button type="submit" style="margin-top:16px;padding:10px 24px;background:#2e7d32;color:#fff;' +
+				'border:none;border-radius:4px;cursor:pointer;font-size:14px;">Submit</button>' +
+				"</form>" +
+				'<p id="status" style="margin-top:16px;"></p>';
+
+			document.getElementById("app").innerHTML = html;
+
+			document.getElementById("onboarding-form").addEventListener("submit", function (e) {
+				e.preventDefault();
+				var statusEl = document.getElementById("status");
+				var formData = new FormData(e.target);
+				var payload = { token: token, email: confirmedEmail };
+				formData.forEach(function (value, key) {
+					payload[key] = value;
+				});
+
+				statusEl.innerText = "Submitting...";
+				call("hr_automation.api.onboarding_details.submit_onboarding_details", payload)
+					.then(function () {
+						statusEl.innerText = "Thank you! Your onboarding details have been submitted.";
+						document.getElementById("onboarding-form").style.display = "none";
+					})
+					.catch(function (e) {
+						statusEl.innerText = e.message || "Submission failed. Please try again.";
+					});
+			});
+		}
 	</script>
 {% endif %}
 </body>

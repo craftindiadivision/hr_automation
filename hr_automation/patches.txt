@@ -4,3 +4,19 @@
 
 [post_model_sync]
 # Patches added in this section will be executed after doctypes are migrated
+hr_automation.patches.set_probation_end_date
+hr_automation.patches.create_final_round_interview_type
+hr_automation.patches.set_interview_status_from_feedback
+hr_automation.patches.set_appointment_letter_mode
+hr_automation.patches.move_confirmation_to_appraisal
+hr_automation.patches.remove_mother_occupation
+hr_automation.patches.document_verification_select
+hr_automation.patches.set_appointment_status
+hr_automation.patches.link_appointment_letter_employee
+hr_automation.patches.set_appraisal_schedule
+hr_automation.patches.stage_based_appraisals
+hr_automation.patches.confirm_existing_employees
+hr_automation.patches.sync_employee_current_salary
+hr_automation.patches.remove_promotion_automation_fields
+hr_automation.patches.remove_appraisal_feedback_fields
+hr_automation.patches.final_appraisal_schedule

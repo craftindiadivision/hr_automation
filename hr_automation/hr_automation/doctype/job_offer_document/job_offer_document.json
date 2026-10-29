@@ -1,0 +1,48 @@
+{
+ "actions": [],
+ "creation": "2026-10-05 13:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "document_name",
+  "file",
+  "uploaded_on"
+ ],
+ "fields": [
+  {
+   "columns": 4,
+   "fieldname": "document_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Document",
+   "reqd": 1
+  },
+  {
+   "columns": 6,
+   "fieldname": "file",
+   "fieldtype": "Attach",
+   "in_list_view": 1,
+   "label": "File",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "uploaded_on",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Uploaded On",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2026-10-05 13:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "HR Automation",
+ "name": "Job Offer Document",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

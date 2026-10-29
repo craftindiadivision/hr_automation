@@ -1,23 +1,25 @@
 import frappe
-from frappe.utils import add_days, formatdate, today
+from frappe import _
+from frappe.utils import add_days, formatdate, getdate, now_datetime, today
+
+from hr_automation.api.leave_management import assign_probation_leave_policy
+from hr_automation.api.onboarding_details import ONBOARDING_FIELDS
 
 
 def create_onboarding_program(doc, method=None):
-	"""Hook: Employee after_insert / on_update. The moment a joining date is
-	given, enrolls the employee into an Onboarding Training Program for that
-	date, named from HR Automation Settings - employees who join on the same
-	day share one program and its events, rather than getting a separate one
-	each. If no Onboarding Event Names are configured yet, nothing is created
-	(no invented number of generic events) - configure at least one row in
-	Settings, then save this Employee again."""
-	if not doc.date_of_joining or doc.custom_onboarding_training_program:
+	"""Hook: Employee after_insert / on_update. Enrolls the employee into the
+	Onboarding Training Program for their joining date, named from HR Automation
+	Settings - employees who join on the same day share one program and its
+	events. Changing the joining date moves them to the matching program and
+	drops them from that program's upcoming events. If no Onboarding Event Names
+	are configured yet, nothing is created (no invented number of generic events)."""
+	if not doc.date_of_joining or doc.custom_buddy_training_program:
 		return
 
 	before = doc.get_doc_before_save()
-	if before and before.date_of_joining:
-		# Already had a joining date before this save - this isn't the moment
-		# it was "given", so don't retroactively enroll existing employees.
+	if before and before.date_of_joining == doc.date_of_joining:
 		return
+	old_program = before.custom_onboarding_training_program if before else None
 
 	names = _get_pipeline_event_names("onboarding_event_names")
 	if not names:
@@ -42,9 +44,26 @@ def create_onboarding_program(doc, method=None):
 		)
 		_populate_scheduled_sessions(program_name, doc.date_of_joining, names)
 
+	if old_program and old_program != program_name:
+		_remove_employee_from_upcoming_events(doc.name, old_program)
+
 	frappe.db.set_value(
 		"Employee", doc.name, "custom_onboarding_training_program", program_name, update_modified=False
 	)
+
+
+def _remove_employee_from_upcoming_events(employee: str, training_program: str):
+	events = frappe.get_all(
+		"Training Event",
+		filters={
+			"training_program": training_program,
+			"docstatus": ["!=", 2],
+			"start_time": [">", now_datetime()],
+		},
+		pluck="name",
+	)
+	if events:
+		frappe.db.delete("Training Event Employee", {"parent": ["in", events], "employee": employee})
 
 
 def handle_training_stage_completion(employee: str, training_program: str):
@@ -172,3 +191,210 @@ def _populate_scheduled_sessions(training_program, start_date, labels):
 			},
 		)
 	program.save(ignore_permissions=True)
+
+
+def create_employee_on_completion(doc, method=None):
+	"""Employee Onboarding on_update_after_submit - only for onboardings created
+	before the Appointment Letter took over (create_employee_from_appointment_letter)."""
+	if doc.boarding_status != "Completed" or not doc.has_value_changed("boarding_status"):
+		return
+	employee = create_employee(
+		frappe._dict(
+			job_applicant=doc.job_applicant,
+			job_offer=doc.job_offer,
+			company=doc.company,
+			employee_name=doc.employee_name,
+			designation=doc.designation,
+			department=doc.department,
+			grade=doc.employee_grade,
+			date_of_joining=doc.date_of_joining,
+			holiday_list=doc.holiday_list,
+			salary_structure=doc.salary_structure,
+			gross_salary=doc.gross_salary,
+			shift_type=doc.shift_type,
+			leave_policy=doc.leave_policy,
+		)
+	)
+	frappe.db.set_value("Employee Onboarding", doc.name, "employee", employee, update_modified=False)
+
+
+def create_employee_from_appointment_letter(letter) -> str:
+	"""Called when an Appointment Letter is Accepted (no Employee Onboarding
+	any more): creates the Employee and everything that goes with joining."""
+	employee = create_employee(
+		frappe._dict(
+			job_applicant=letter.job_applicant,
+			job_offer=letter.custom_job_offer,
+			company=letter.company,
+			employee_name=letter.applicant_name,
+			designation=letter.designation,
+			date_of_joining=letter.appointment_date,
+			holiday_list=letter.custom_holiday_list,
+			salary_structure=letter.salary_structure,
+			gross_salary=letter.gross_salary,
+			shift_type=letter.shift_type,
+			leave_policy=letter.leave_policy,
+		)
+	)
+	frappe.db.set_value("Appointment Letter", letter.name, "custom_employee", employee, update_modified=False)
+	return employee
+
+
+def check_ready_for_employee(
+	job_applicant,
+	holiday_list,
+	leave_policy,
+	date_of_joining=None,
+	salary_structure=None,
+	gross_salary=None,
+	shift_type=None,
+	for_letter=False,
+):
+	"""What create_employee needs - checked before an Appointment Letter goes
+	out, since an Online acceptance creates the Employee with nobody watching."""
+	missing = [
+		label
+		for label, value in (
+			(_("Holiday List"), holiday_list),
+			(_("Probation Leave Policy"), leave_policy),
+			# The Appointment Letter must carry everything the Employee's
+			# assignments are made from, so none is silently skipped.
+			*(
+				(
+					(_("Salary Structure"), salary_structure),
+					(_("Gross Salary"), gross_salary),
+					(_("Shift Type"), shift_type),
+				)
+				if for_letter
+				else ()
+			),
+		)
+		if not value
+	]
+	if missing:
+		names = ", ".join(missing[:-1]) + _(" and ") + missing[-1] if len(missing) > 1 else missing[0]
+		frappe.throw(_("Set {0} on the Appointment Letter first").format(names))
+	if date_of_joining:
+		from_date, to_date = frappe.db.get_value("Holiday List", holiday_list, ["from_date", "to_date"])
+		if not (getdate(from_date) <= getdate(date_of_joining) <= getdate(to_date)):
+			frappe.throw(
+				_("Holiday List {0} runs from {1} to {2} and doesn't cover the joining date {3}. Pick the right year's Holiday List.").format(
+					holiday_list, formatdate(from_date), formatdate(to_date), formatdate(date_of_joining)
+				)
+			)
+	dob, gender = frappe.db.get_value("Job Applicant", job_applicant, ["custom_date_of_birth", "custom_gender"])
+	if not dob or not gender:
+		frappe.throw(
+			_("Job Applicant {0} is missing Date of Birth and/or Gender. Fill these in on the Job Applicant first.").format(
+				job_applicant
+			)
+		)
+
+
+def create_employee(values) -> str:
+	"""Creates the Employee (with the onboarding details and uploaded documents)
+	plus their Holiday List, Salary Structure and Shift assignments and
+	probation leave. Returns the existing Employee if there already is one."""
+	existing = frappe.db.get_value("Employee", {"job_applicant": values.job_applicant}, "name")
+	if existing:
+		return existing
+
+	check_ready_for_employee(values.job_applicant, values.holiday_list, values.leave_policy, values.date_of_joining)
+	applicant = frappe.get_doc("Job Applicant", values.job_applicant)
+	offer_type = (
+		frappe.db.get_value("Job Offer", values.job_offer, "custom_employee_type") if values.job_offer else None
+	)
+	documents = frappe.get_all(
+		"Job Offer Document",
+		filters={"parent": values.job_offer, "parentfield": "custom_onboarding_documents"},
+		fields=["document_name", "file", "uploaded_on"],
+		order_by="idx asc",
+	)
+
+	employee = frappe.get_doc(
+		{
+			"doctype": "Employee",
+			"first_name": values.employee_name,
+			"employee_name": values.employee_name,
+			"company": values.company,
+			"department": values.department,
+			"designation": values.designation,
+			"grade": values.grade,
+			"date_of_birth": applicant.custom_date_of_birth,
+			"gender": applicant.custom_gender,
+			"date_of_joining": values.date_of_joining,
+			"job_applicant": values.job_applicant,
+			"personal_email": applicant.get("personal_email") or applicant.email_id,
+			"status": "Active",
+			"custom_is_trainee": 1 if offer_type == "Trainee" else 0,
+			"custom_is_employee": 1 if offer_type == "Employee" else 0,
+			"custom_probation_leave_policy": values.leave_policy,
+			"custom_onboarding_documents": documents,
+		}
+	)
+	for fieldname in ONBOARDING_FIELDS:
+		value = applicant.get(fieldname)
+		if value and fieldname != "personal_email":
+			employee.set(fieldname, value)
+	employee.insert(ignore_permissions=True)
+
+	frappe.get_doc(
+		{
+			"doctype": "Holiday List Assignment",
+			"applicable_for": "Employee",
+			"assigned_to": employee.name,
+			"employee_company": values.company,
+			"holiday_list": values.holiday_list,
+			"from_date": values.date_of_joining,
+			"naming_series": "HR-HLA-.YYYY.-",
+		}
+	).insert(ignore_permissions=True).submit()
+
+	create_salary_structure_assignment(values, employee.name)
+	create_shift_assignment(values, employee.name)
+	# Probation leave only (a trainee's starts after 3 months, via the daily
+	# allocate_probation_leave); the confirmed policy of each leave year is
+	# assigned once probation ends - see leave_management.allocate_regular_leave.
+	assign_probation_leave_policy(employee.name)
+	return employee.name
+
+
+def create_salary_structure_assignment(doc, employee: str):
+	if not doc.salary_structure:
+		return
+
+	frappe.get_doc(
+		{
+			"doctype": "Salary Structure Assignment",
+			"employee": employee,
+			"salary_structure": doc.salary_structure,
+			"company": doc.company,
+			"currency": frappe.get_cached_value("Company", doc.company, "default_currency"),
+			"from_date": frappe.db.get_value("Employee", employee, "date_of_joining"),
+			"base": doc.gross_salary,
+		}
+	).insert(ignore_permissions=True).submit()
+
+
+def create_shift_assignment(doc, employee: str):
+	if not doc.shift_type:
+		return
+
+	date_of_joining = frappe.db.get_value("Employee", employee, "date_of_joining")
+	frappe.get_doc(
+		{
+			"doctype": "Shift Assignment",
+			"employee": employee,
+			"shift_type": doc.shift_type,
+			"company": doc.company,
+			"start_date": date_of_joining,
+			"end_date": _get_current_fiscal_year_end_date(doc.company, date_of_joining),
+		}
+	).insert(ignore_permissions=True).submit()
+
+
+def _get_current_fiscal_year_end_date(company, date_of_joining):
+	from erpnext.accounts.utils import get_fiscal_year
+
+	fiscal_year = get_fiscal_year(date=date_of_joining, company=company, as_dict=True, verbose=0)
+	return fiscal_year.year_end_date

@@ -12,47 +12,113 @@
 	</style>
 </head>
 <body>
-{% if valid %}
-	<h3>Upload Your Documents</h3>
-	<p>Reference: {{ target_name }}</p>
-	<form id="upload-form">
-		<div class="doc-row">
-			<label>10th Certificate</label>
-			<input type="file" data-label="10th Certificate">
-		</div>
-		<div class="doc-row">
-			<label>+2 Certificate</label>
-			<input type="file" data-label="+2 Certificate">
-		</div>
-		<div class="doc-row">
-			<label>Degree Certificate 1 <span class="optional">(if any)</span></label>
-			<input type="file" data-label="Degree Certificate 1">
-		</div>
-		<div class="doc-row">
-			<label>Degree Certificate 2 <span class="optional">(if any)</span></label>
-			<input type="file" data-label="Degree Certificate 2">
-		</div>
-		<div class="doc-row">
-			<label>Aadhaar Card</label>
-			<input type="file" data-label="Aadhaar Card">
-		</div>
-		<div class="doc-row">
-			<label>PAN Card</label>
-			<input type="file" data-label="PAN Card">
-		</div>
-		<div class="doc-row">
-			<label>Experience Letter <span class="optional">(if worked earlier)</span></label>
-			<input type="file" data-label="Experience Letter">
-		</div>
-		<div class="doc-row">
-			<label>Reference Letter <span class="optional">(if any)</span></label>
-			<input type="file" data-label="Reference Letter">
-		</div>
-		<button type="submit" style="padding:8px 20px;background:#2e7d32;color:#fff;border:none;
-			border-radius:4px;cursor:pointer;">Upload</button>
-	</form>
-	<p id="status" style="margin-top:16px;"></p>
+{% if invalid %}
+	<h3>Invalid Link</h3>
+	<p>Please contact HR for a new link.</p>
+{% elif expired %}
+	<h3>Expired Link</h3>
+	<p>This link has expired. Please contact HR.</p>
+{% else %}
+	<div id="email-gate">
+		<p>Please confirm the email address this link was sent to:</p>
+		<form id="email-gate-form">
+			<input type="email" id="gate-email" required placeholder="you@example.com"
+				style="width:100%;padding:8px;box-sizing:border-box;">
+			<button type="submit" style="margin-top:16px;padding:8px 20px;background:#2e7d32;color:#fff;
+				border:none;border-radius:4px;cursor:pointer;">Continue</button>
+			<p id="gate-status" style="margin-top:12px;color:#c62828;"></p>
+		</form>
+	</div>
+
+	<div id="already-submitted" style="display:none;">
+		<h3>Documents Already Submitted</h3>
+		<p>Thank you - your documents have already been received.</p>
+	</div>
+
+	<div id="real-content" style="display:none;">
+		<h3>Upload Your Documents</h3>
+		<p>Reference: <span id="target-name"></span></p>
+		<form id="upload-form">
+			<div class="doc-row">
+				<label>10th Certificate</label>
+				<input type="file" data-label="10th Certificate">
+			</div>
+			<div class="doc-row">
+				<label>+2 Certificate</label>
+				<input type="file" data-label="+2 Certificate">
+			</div>
+			<div class="doc-row">
+				<label>Degree Certificate 1 <span class="optional">(if any)</span></label>
+				<input type="file" data-label="Degree Certificate 1">
+			</div>
+			<div class="doc-row">
+				<label>Degree Certificate 2 <span class="optional">(if any)</span></label>
+				<input type="file" data-label="Degree Certificate 2">
+			</div>
+			<div class="doc-row">
+				<label>Aadhaar Card</label>
+				<input type="file" data-label="Aadhaar Card">
+			</div>
+			<div class="doc-row">
+				<label>PAN Card</label>
+				<input type="file" data-label="PAN Card">
+			</div>
+			<div class="doc-row">
+				<label>Experience Letter <span class="optional">(if worked earlier)</span></label>
+				<input type="file" data-label="Experience Letter">
+			</div>
+			<div class="doc-row">
+				<label>Reference Letter <span class="optional">(if any)</span></label>
+				<input type="file" data-label="Reference Letter">
+			</div>
+			<button type="submit" style="padding:8px 20px;background:#2e7d32;color:#fff;border:none;
+				border-radius:4px;cursor:pointer;">Upload</button>
+		</form>
+		<p id="status" style="margin-top:16px;"></p>
+	</div>
+
 	<script>
+		var confirmedEmail = "";
+
+		function extractMessage(data) {
+			try {
+				var messages = JSON.parse(data._server_messages);
+				return JSON.parse(messages[0]).message;
+			} catch (e) { /* fall through */ }
+			return null;
+		}
+
+		document.getElementById("email-gate-form").addEventListener("submit", function (e) {
+			e.preventDefault();
+			var email = document.getElementById("gate-email").value.trim();
+			var gateStatus = document.getElementById("gate-status");
+			gateStatus.innerText = "Checking...";
+			fetch("/api/method/hr_automation.api.recruitment_automation.get_upload_target", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ token: "{{ token }}", email: email }),
+			})
+				.then(function (r) {
+					return r.json().then(function (data) {
+						if (!r.ok) throw new Error(extractMessage(data) || "That didn't match. Please try again.");
+						return data.message;
+					});
+				})
+				.then(function (target) {
+					confirmedEmail = email;
+					document.getElementById("email-gate").style.display = "none";
+					if (target.already_submitted) {
+						document.getElementById("already-submitted").style.display = "block";
+						return;
+					}
+					document.getElementById("target-name").innerText = target.name;
+					document.getElementById("real-content").style.display = "block";
+				})
+				.catch(function (e) {
+					gateStatus.innerText = e.message || "That didn't match. Please try again.";
+				});
+		});
+
 		document.getElementById("upload-form").addEventListener("submit", function (e) {
 			e.preventDefault();
 			var inputs = document.querySelectorAll('input[type="file"]');
@@ -72,6 +138,7 @@
 				var fd = new FormData();
 				fd.append("file", item.file);
 				fd.append("token", "{{ token }}");
+				fd.append("email", confirmedEmail);
 				fd.append("label", item.label);
 				return fetch("/api/method/hr_automation.api.recruitment_automation.upload_document_via_token", {
 					method: "POST",
@@ -83,17 +150,21 @@
 			});
 			Promise.all(uploads)
 				.then(function () {
+					return fetch("/api/method/hr_automation.api.recruitment_automation.mark_documents_submitted", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ token: "{{ token }}", email: confirmedEmail }),
+					});
+				})
+				.then(function () {
 					statusEl.innerText = "Upload complete. Thank you!";
-					document.getElementById("upload-form").reset();
+					document.getElementById("upload-form").style.display = "none";
 				})
 				.catch(function () {
 					statusEl.innerText = "Upload failed. Please try again.";
 				});
 		});
 	</script>
-{% else %}
-	<h3>Invalid or expired link</h3>
-	<p>Please contact HR for a new link.</p>
 {% endif %}
 </body>
 </html>
