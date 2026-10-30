@@ -369,7 +369,7 @@ def create_salary_structure_assignment(doc, employee: str):
 			"employee": employee,
 			"salary_structure": doc.salary_structure,
 			"company": doc.company,
-			"currency": frappe.get_cached_value("Comthapany", doc.company, "default_currency"),
+			"currency": frappe.get_cached_value("Company", doc.company, "default_currency"),
 			"from_date": frappe.db.get_value("Employee", employee, "date_of_joining"),
 			"base": doc.gross_salary,
 		}
