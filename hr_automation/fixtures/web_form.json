@@ -263,7 +263,7 @@
     "precision": "",
     "read_only": 0,
     "read_only_depends_on": null,
-    "reqd": 1,
+    "reqd": 0,
     "show_in_filter": 0
    },
    {
