@@ -35,14 +35,17 @@ def _get_training_stats():
 	regular_programs = frappe.get_all(
 		"Training Program", filters={"custom_program_type": "Regular"}, pluck="name"
 	)
-	events_by_program = (
-		frappe.qb.from_(TrainingEvent)
-		.select(TrainingEvent.training_program, Count(TrainingEvent.name).as_("count"))
-		.where((TrainingEvent.docstatus == 1) & (TrainingEvent.training_program.isin(regular_programs)))
-		.groupby(TrainingEvent.training_program)
-		.orderby(Count(TrainingEvent.name), order=frappe.qb.desc)
-		.limit(10)
-	).run(as_dict=True)
+	# An empty IN () is invalid SQL, so skip the query when there are no Regular programs.
+	events_by_program = []
+	if regular_programs:
+		events_by_program = (
+			frappe.qb.from_(TrainingEvent)
+			.select(TrainingEvent.training_program, Count(TrainingEvent.name).as_("count"))
+			.where((TrainingEvent.docstatus == 1) & (TrainingEvent.training_program.isin(regular_programs)))
+			.groupby(TrainingEvent.training_program)
+			.orderby(Count(TrainingEvent.name), order=frappe.qb.desc)
+			.limit(10)
+		).run(as_dict=True)
 
 	start_times = frappe.get_all(
 		"Training Event", filters={"docstatus": 1}, fields=["start_time"], pluck="start_time"
