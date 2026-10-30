@@ -2,10 +2,38 @@ import frappe
 from frappe.utils import flt, get_first_day, get_last_day, today
 from hrms.payroll.utils import (
 	COMPONENT_EVAL_GLOBALS,
-	SALARY_SLIP_EVAL_DEFAULTS,
 	_safe_eval,
 	get_component_abbr_map,
 )
+
+try:
+	from hrms.payroll.utils import SALARY_SLIP_EVAL_DEFAULTS
+except ImportError:
+	# Not exported by every HRMS version - these are the zero defaults a Salary Slip
+	# seeds its formula context with.
+	SALARY_SLIP_EVAL_DEFAULTS = {
+		"gross_pay": 0,
+		"net_pay": 0,
+		"total_deduction": 0,
+		"rounded_total": 0,
+		"total_working_hours": 0,
+		"hour_rate": 0,
+		"year_to_date": 0,
+		"month_to_date": 0,
+		"gross_year_to_date": 0,
+		"ctc": 0,
+		"total_earnings": 0,
+		"income_from_other_sources": 0,
+		"non_taxable_earnings": 0,
+		"deductions_before_tax_calculation": 0,
+		"tax_exemption_declaration": 0,
+		"standard_tax_exemption_amount": 0,
+		"annual_taxable_amount": 0,
+		"income_tax_deducted_till_date": 0,
+		"future_income_tax_deductions": 0,
+		"current_month_income_tax": 0,
+		"total_income_tax": 0,
+	}
 
 
 def _build_preview_context(base_salary):
