@@ -2,7 +2,12 @@ import frappe
 from frappe import _
 from frappe.utils import get_url
 
-from hr_automation.api.link_expiry import check_email_matches, check_not_expired, stamp_sent_now
+from hr_automation.api.link_expiry import (
+	LINK_VALIDITY_HOURS,
+	check_email_matches,
+	check_not_expired,
+	stamp_sent_now,
+)
 from hr_automation.api.recruitment_automation import _get_or_create_token
 
 ONBOARDING_FIELDS = [
@@ -129,14 +134,38 @@ def resend_onboarding_details_link(appointment_letter):
 
 	link = get_onboarding_details_link_if_pending(applicant.name)
 
+	company = (
+		frappe.db.get_value("Job Opening", applicant.job_title, "company") if applicant.job_title else None
+	) or frappe.defaults.get_global_default("company")
+
 	message = frappe.render_template(
 		"""
 		<p>Dear {{ applicant_name }},</p>
-		<p>Please complete your onboarding details using the link below. Your appointment letter
+		<p>Congratulations and welcome{% if company %} to <b>{{ company }}</b>{% endif %}! As the next step of
+			your joining process, please fill in your onboarding details (personal, address,
+			emergency contact and identification details) using the button below. Your appointment letter
 			will be emailed to you as soon as you submit them.</p>
-		<p><a href="{{ details_link }}">{{ details_link }}</a></p>
+		<p style="margin: 24px 0;">
+			<a href="{{ details_link }}"
+				style="background:#2b6cb0;color:#ffffff;padding:10px 20px;border-radius:6px;text-decoration:none;">
+				Complete Onboarding Details
+			</a>
+		</p>
+		<p>This link is valid for {{ validity_hours }} hours and is meant only for you. When the form asks
+			for it, enter this email address ({{ email }}) to verify yourself. We will never ask for
+			your password or any payment.</p>
+		<p>If you did not expect this email, or the link has expired, please reply to this email
+			and our HR team will help you.</p>
+		<p>Warm regards,<br>
+			Human Resources{% if company %}<br>{{ company }}{% endif %}</p>
 		""",
-		{"applicant_name": applicant.applicant_name, "details_link": link},
+		{
+			"applicant_name": applicant.applicant_name,
+			"details_link": link,
+			"company": company,
+			"email": email,
+			"validity_hours": LINK_VALIDITY_HOURS,
+		},
 	)
 	frappe.sendmail(
 		recipients=[email],
